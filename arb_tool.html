@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arb Desk</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@400;600;700;800&display=swap');
+
+  :root{
+    --bg:#171b21; --panel:#1e242c; --panel2:#191f26; --line:#3a4658;
+    --ink:#f0f4f9; --dim:#aab6c8; --faint:#7e8ca0;
+    --green:#3fb950; --green-d:#1a7f37; --red:#f85149; --amber:#e3a72c;
+    --acc:#58a6ff; --acc-d:#1f6feb; --chip:#242b35;
+    --rowline:#2c333e; --g1:rgba(88,166,255,.08); --g2:rgba(63,185,80,.05);
+    --addbtn-ink:#0d1117;
+  }
+  [data-theme="light"]{
+    --bg:#f4f6fb; --panel:#ffffff; --panel2:#f0f3f9; --line:#d9e0ec;
+    --ink:#1a2332; --dim:#5c6b82; --faint:#9aa7bd;
+    --green:#1a7f37; --green-d:#15803d; --red:#cf222e; --amber:#9a6700;
+    --acc:#1f6feb; --acc-d:#0a58ca; --chip:#eef2f9;
+    --rowline:#e6ebf3; --g1:rgba(31,111,235,.06); --g2:rgba(26,127,55,.05);
+    --addbtn-ink:#ffffff;
+  }
+  /* warm dark — cozy taupe/mocha grey, softer than the cool dark */
+  [data-theme="warmdark"]{
+    --bg:#211d1c; --panel:#2b2624; --panel2:#251f1e; --line:#544a44;
+    --ink:#f5eee7; --dim:#c2b3a7; --faint:#8f8177;
+    --green:#7ccf6a; --green-d:#4a8f3c; --red:#f5806c; --amber:#ecbc65;
+    --acc:#eeb877; --acc-d:#a86a1f; --chip:#332c29;
+    --rowline:#3a322e; --g1:rgba(232,176,106,.07); --g2:rgba(111,191,94,.05);
+    --addbtn-ink:#211d1c;
+  }
+  /* warm light — cream paper, low glare */
+  [data-theme="warmlight"]{
+    --bg:#f7f2e9; --panel:#fffdf8; --panel2:#f3ecdf; --line:#e4d8c4;
+    --ink:#3a3126; --dim:#7a6c56; --faint:#b0a288;
+    --green:#4a7c2f; --green-d:#3d6b26; --red:#c0492e; --amber:#9a6a1a;
+    --acc:#b8860b; --acc-d:#96690a; --chip:#f0e8d8;
+    --rowline:#ece2d0; --g1:rgba(184,134,11,.06); --g2:rgba(74,124,47,.05);
+    --addbtn-ink:#fffdf8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:
+      radial-gradient(900px 500px at 85% -10%, var(--g1), transparent 60%),
+      radial-gradient(700px 400px at -5% 110%, var(--g2), transparent 55%),
+      var(--bg);
+    color:var(--ink); font-family:'Sora',system-ui,sans-serif;
+    min-height:100vh; padding:16px; line-height:1.4;
+    transition:background .25s,color .25s;
+  }
+  .wrap{max-width:720px;margin:0;padding-left:16px}
+  header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.5px}
+  h1 span{color:var(--acc)}
+  .sub{font-family:'Space Mono',monospace;font-size:12px;color:var(--dim)}
+  .grid{display:grid;grid-template-columns:1fr;gap:16px}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:14px;padding:16px;transition:background .25s,border-color .25s}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:14px;font-weight:700;font-family:'Space Mono',monospace}
+
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+  .row3{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:560px){
+    body{padding:12px}
+    .row,.row3{grid-template-columns:1fr;gap:8px;margin-bottom:8px}
+    .card{padding:13px}
+    h1{font-size:19px}
+  }
+  label{display:block;font-size:11px;color:var(--dim);margin-bottom:3px;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.5px}
+  input,select{
+    width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+    color:var(--ink);padding:8px 10px;font-family:'Space Mono',monospace;font-size:14px;outline:none;transition:.15s;
+  }
+  input:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(88,166,255,.12)}
+  .flash-hl{border-color:var(--acc) !important;box-shadow:0 0 0 3px rgba(88,166,255,.35) !important;animation:hlpulse .6s ease-in-out 2}
+  @keyframes hlpulse{0%,100%{box-shadow:0 0 0 3px rgba(88,166,255,.35)}50%{box-shadow:0 0 0 6px rgba(88,166,255,.5)}}
+  input::placeholder{color:#3a4357}
+
+  .legtag{display:inline-block;font-family:'Space Mono',monospace;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;margin-bottom:7px}
+  .legA{background:rgba(88,166,255,.15);color:var(--acc)}
+  .legB{background:rgba(63,185,80,.15);color:var(--green)}
+  .divider{height:1px;background:var(--line);margin:11px 0}
+
+  .out{background:var(--panel2);border:1px dashed var(--line);border-radius:10px;padding:12px;margin-top:4px}
+  .bigstake{font-family:'Space Mono',monospace;font-size:13px;color:var(--dim);display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+  .bigstake:last-child{border-bottom:none}
+  .bigstake b{font-size:20px;color:var(--ink);font-weight:700}
+  .bigstake .hl{color:var(--green)}
+  .pos{color:var(--green)} .neg{color:var(--red)}
+
+  button{cursor:pointer;border:none;font-family:'Sora';font-weight:700;border-radius:8px;transition:.15s}
+  .btn-add{width:100%;background:linear-gradient(180deg,var(--acc),var(--acc-d));color:var(--addbtn-ink);padding:12px;font-size:14px;margin-top:6px}
+  .btn-add:hover{filter:brightness(1.1)}
+  .btn-ghost{background:var(--chip);color:var(--dim);border:1px solid var(--line);padding:7px 12px;font-size:12px}
+  .qnav{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--qc,#1f6feb);background:color-mix(in srgb, var(--qc,#1f6feb) 22%, transparent);color:var(--qc,#1f6feb);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;transition:background .15s,transform .1s;backdrop-filter:blur(2px)}
+  .qnav:hover{background:color-mix(in srgb, var(--qc,#1f6feb) 40%, transparent)}
+  .qnav:active{transform:scale(.92)}
+  @media(max-width:640px){.qnav{width:36px;height:36px;font-size:16px}#quickNav{right:8px;gap:7px}}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--acc)}
+  .dirbtn{background:var(--chip);color:var(--dim);padding:7px 12px;font-size:12px;font-family:'Space Mono',monospace;border:none}
+  .dirbtn.active{background:var(--acc-d);color:#fff}
+  .dirbtn:not(.active):hover{color:var(--ink)}
+
+  table{width:100%;border-collapse:collapse;font-family:'Space Mono',monospace;font-size:12px;margin-top:4px}
+  th{text-align:left;color:var(--dim);font-weight:400;font-size:10px;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--line)}
+  td{padding:7px 8px;border-bottom:1px solid var(--rowline);color:var(--ink)}
+  tr:hover td{background:rgba(88,166,255,.04)}
+  .num{text-align:right}
+  .del{color:var(--faint);cursor:pointer;font-weight:700}
+  .del:hover{color:var(--red)}
+  .empty{color:var(--faint);text-align:center;padding:24px;font-family:'Space Mono',monospace;font-size:12px}
+
+  .stat{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px}
+  .stat div{font-family:'Space Mono',monospace}
+  .stat .k{font-size:10px;color:var(--dim);text-transform:uppercase}
+  .stat .v{font-size:17px;font-weight:700;white-space:nowrap}
+
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .note{font-size:11px;color:var(--faint);font-family:'Space Mono',monospace;margin-top:7px;line-height:1.5}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green-d);color:#fff;padding:11px 20px;border-radius:8px;font-family:'Space Mono',monospace;font-size:13px;opacity:0;transition:.25s;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .pillrow{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+</style>
+</head>
+<body>
+<!-- ===== LOCK OVERLAY (full-block passcode gate; deterrent only on file://) ===== -->
+<div id="lockOverlay" style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#0d1117;font-family:'Space Mono',monospace">
+  <div style="width:min(320px,86vw);text-align:center;color:#e6edf3">
+    <div style="font-size:34px;margin-bottom:6px">🔒</div>
+    <div style="font-size:15px;font-weight:700;letter-spacing:1px;margin-bottom:4px">ARBDESK — LOCKED</div>
+    <div style="font-size:10px;color:#484f58;margin-bottom:14px">sync v3</div>
+    <input id="lockPass" type="password" inputmode="numeric" autocomplete="off" placeholder="passcode"
+      style="width:100%;box-sizing:border-box;padding:11px 12px;font-family:'Space Mono',monospace;font-size:16px;text-align:center;letter-spacing:3px;border:1px solid #30363d;border-radius:8px;background:#161b22;color:#e6edf3;outline:none">
+    <div id="lockErr" style="height:16px;margin-top:8px;font-size:12px;color:#f85149"></div>
+    <button id="lockBtn" style="width:100%;margin-top:6px;padding:11px;font-family:'Space Mono',monospace;font-size:14px;font-weight:700;border:none;border-radius:8px;background:#238636;color:#fff;cursor:pointer">unlock</button>
+    <div id="lockClock" style="margin-top:14px;font-size:12px;color:#8b949e;text-align:left;line-height:1.5"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- LEFT: CALCULATOR -->
+    <div class="card" id="secCalc">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h2 style="margin:0">① Stake Calculator</h2>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="sub" id="clock"></span>
+          <button class="btn-ghost" id="themeBtn" onclick="toggleTheme()" style="font-size:15px;padding:5px 9px">🌙</button>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+        <label style="margin:0">📲 Paste TG alert → auto-fill</label>
+        <div style="display:flex;gap:6px">
+          <button class="btn-ghost" onclick="reuseTG()">↻ Reuse</button>
+          <button class="btn-ghost" onclick="clearCalc()">✕ Clear all</button>
+        </div>
+      </div>
+      <textarea id="tgPaste" rows="5" placeholder="Paste the whole Telegram message here…"
+        style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:10px 11px;font-family:'Space Mono',monospace;font-size:12px;line-height:1.5;outline:none;resize:vertical"
+        oninput="parseTG()"></textarea>
+      <div id="tgStatus" class="note" style="margin-top:5px"></div>
+      <div style="height:10px"></div>
+
+      <div class="row">
+        <div>
+          <label>Match / Event</label>
+          <input id="event" placeholder="曼城 -vs- 水晶宮">
+        </div>
+        <div>
+          <label>League</label>
+          <input id="league" list="leagues" placeholder="英超">
+          <datalist id="leagues">
+            <option>英超</option><option>英冠</option><option>意甲</option><option>西甲</option>
+            <option>德甲</option><option>德乙</option><option>荷甲</option><option>荷乙</option>
+            <option>J1</option><option>J2</option><option>葡超</option><option>韩K1</option>
+            <option>澳A</option><option>欧冠</option><option>欧霸</option><option>瑞典超</option>
+          </datalist>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- DIRECTION + PROFIT MODE (one row) -->
+      <div id="secDir" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;scroll-margin-top:12px">
+        <label style="margin:0">Direction</label>
+        <div style="display:flex;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden">
+          <button id="dirB" class="dirbtn" onclick="setDir('B',true)">know B → calc A</button>
+          <button id="dirA" class="dirbtn" onclick="setDir('A',true)">know A → calc B</button>
+        </div>
+        <label style="margin:0 0 0 8px">Mode</label>
+        <select id="modeSel" onchange="setMode(this.value,true)" style="width:auto;min-width:180px">
+          <option value="bal">balanced (50/50)</option>
+          <option value="s60">60% A / 40% B</option>
+          <option value="s70">70% A / 30% B</option>
+          <option value="s80">80% A / 20% B</option>
+          <option value="maxA">max A · no loss B (100/0)</option>
+        </select>
+      </div>
+
+      <!-- LEG A -->
+      <span class="legtag legA">LEG A · the value bet</span>
+      <div class="row row3">
+        <div>
+          <label>Bookie A</label>
+          <select id="bkA">
+            <option>HKJB</option><option>pin</option><option>ex 198</option><option>198 fix</option><option>96.one</option>
+          </select>
+        </div>
+        <div>
+          <label>Selection A</label>
+          <input id="selA" placeholder="小 3.25">
+        </div>
+        <div>
+          <label>Odds A (dec)</label>
+          <input id="oddsA" type="number" step="0.001" placeholder="1.02">
+        </div>
+      </div>
+      <div class="row row3">
+        <div>
+          <label id="lblStakeA">Stake A</label>
+          <input id="stakeA" type="number" step="1" placeholder="—">
+        </div>
+        <div>
+          <label>Hedge odds B (dec)</label>
+          <input id="oddsB" type="number" step="0.001" placeholder="1.01">
+        </div>
+        <div>
+          <label>Rounding</label>
+          <select id="round">
+            <option value="1">nearest 1</option>
+            <option value="10">nearest 10</option>
+            <option value="100" selected>nearest 100</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- LEG B -->
+      <span class="legtag legB">LEG B · the hedge</span>
+      <div class="row row3">
+        <div>
+          <label>Bookie B</label>
+          <select id="bkB">
+            <option>198 fix</option><option>HKJB</option><option>pin</option><option>ex 198</option><option>96.one</option>
+          </select>
+        </div>
+        <div>
+          <label>Selection B</label>
+          <input id="selB" placeholder="大 3.25">
+        </div>
+        <div>
+          <label id="lblStakeB">Stake B</label>
+          <input id="stakeB" type="number" step="1" placeholder="—">
+        </div>
+      </div>
+
+      <!-- OUTPUT -->
+      <div class="out" id="outBox">
+        <div class="bigstake">
+          <span>Real stake A on <b id="oBkA" style="font-size:13px;color:var(--acc)">A</b> <span id="oTagA" style="color:var(--faint);font-size:11px"></span></span>
+          <b class="hl" id="oStakeA">—</b>
+        </div>
+        <div class="bigstake">
+          <span>Real stake B on <b id="oBkB" style="font-size:13px;color:var(--green)">B</b> <span id="oTagB" style="color:var(--faint);font-size:11px"></span></span>
+          <b class="hl" id="oStakeBout">—</b>
+        </div>
+        <div class="bigstake" style="background:rgba(88,166,255,.06);margin:0 -6px;padding-left:6px;padding-right:6px;border-radius:6px">
+          <span>↳ <b style="font-size:13px;color:var(--amber)">PLACE</b> <span id="oSelA" style="color:var(--ink);font-size:12px"></span> on <b id="oPlBkA" style="font-size:13px;color:var(--acc)">A</b> <b id="oOddsA" style="color:var(--acc);font-size:17px;font-weight:700;background:rgba(88,166,255,.15);padding:1px 6px;border-radius:4px"></b> <span id="oPtAnote" style="color:var(--faint);font-size:11px"></span></span>
+          <b class="hl" id="oPlaceA">—</b>
+        </div>
+        <div class="bigstake" style="background:rgba(63,185,80,.06);margin:0 -6px;padding-left:6px;padding-right:6px;border-radius:6px">
+          <span>↳ <b style="font-size:13px;color:var(--amber)">PLACE</b> <span id="oSelB" style="color:var(--ink);font-size:12px"></span> on <b id="oPlBkB" style="font-size:13px;color:var(--green)">B</b> <b id="oOddsB" style="color:var(--green);font-size:17px;font-weight:700;background:rgba(63,185,80,.15);padding:1px 6px;border-radius:4px"></b> <span id="oPtBnote" style="color:var(--faint);font-size:11px"></span></span>
+          <b class="hl" id="oPlaceB">—</b>
+        </div>
+        <div class="bigstake">
+          <span>Return if A wins</span><b id="oRetA">—</b>
+        </div>
+        <div class="bigstake">
+          <span>Return if B wins</span><b id="oRetB">—</b>
+        </div>
+        <div style="background:rgba(88,166,255,.10);border:1px solid rgba(88,166,255,.30);border-radius:8px;margin:10px -6px 0;padding:10px 12px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;font-family:'Space Mono',monospace;font-size:15px;font-weight:700">
+            <span>Locked profit (A / B) &nbsp;<b id="oProfit">—</b></span>
+            <span id="oProfitNote" style="font-weight:400;font-size:12px"></span>
+          </div>
+          <div id="oPinRow" style="display:none;justify-content:space-between;align-items:center;font-family:'Space Mono',monospace;font-size:15px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(88,166,255,.25)">
+            <span style="color:var(--dim)">Pin (leg A)</span>
+            <span id="oPinTag"></span>
+          </div>
+        </div>
+        <div id="oKellyRow" style="display:none;background:rgba(210,153,34,.12);border:1px solid rgba(210,153,34,.35);margin:8px -6px 0;padding:8px 10px;border-radius:8px">
+          <div id="oKellyHead" style="display:flex;justify-content:space-between;align-items:center;font-family:'Space Mono',monospace;font-size:13px">
+            <span>➕ <b style="color:#d29922">EXTRA</b> <span id="oKellySel" style="color:var(--ink);font-size:12px"></span> on <b id="oKellyBk" style="color:var(--acc)">A</b> <b id="oKellyOdds" style="color:#8957e5;font-size:17px;font-weight:700;background:rgba(137,87,229,.15);padding:1px 6px;border-radius:4px"></b></span>
+            <b class="hl" id="oKelly" style="color:#2ea043;font-size:17px">—</b>
+          </div>
+          <div id="oKellyEv" style="color:var(--dim);font-size:11px;margin-top:3px"></div>
+          <div id="oKellyNote" style="color:var(--faint);font-size:11px;margin-top:1px"></div>
+          <div id="oKellyDup" style="display:none;color:#f85149;font-size:13px;font-weight:600;margin-top:8px;padding:8px 10px;background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.4);border-radius:7px;font-family:'Space Mono',monospace;line-height:1.5"></div>
+          <label id="oKellyAgainWrap" style="display:none;align-items:center;gap:8px;margin-top:7px;padding:7px 10px;background:rgba(248,81,73,.06);border-radius:7px;font-size:13px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink);cursor:pointer">
+            <input type="checkbox" id="betAgain" style="width:auto;margin:0;transform:scale(1.3)" onchange="toggleBetAgain()"> bet again (override — I really want to place this)
+          </label>
+          <div id="oKellyEditWrap" style="display:none;align-items:center;gap:8px;margin-top:6px;padding:7px 10px;background:rgba(210,153,34,.08);border-radius:7px;font-size:12px;text-transform:none;letter-spacing:0">
+            <span style="font-family:'Space Mono',monospace;color:var(--dim);white-space:nowrap">log this amount:</span>
+            <input id="oKellyEdit" type="number" step="100" min="0" style="width:120px;margin:0;font-family:'Space Mono',monospace;font-size:14px;font-weight:700" oninput="editExtraStake()">
+            <span style="font-family:'Space Mono',monospace;color:var(--dim);white-space:nowrap">(suggested: <b id="oKellySugg" style="color:#2ea043">—</b>)</span>
+          </div>
+          <div id="oKellyTotRow" style="display:flex;justify-content:space-between;align-items:center;font-family:'Space Mono',monospace;font-size:14px;font-weight:700;margin-top:7px;padding-top:7px;border-top:1px solid rgba(210,153,34,.35)">
+            <span id="oKellyTotLbl">TOTAL on A (arb + extra)</span>
+            <b id="oKellyTot" style="color:#d29922;font-size:18px">—</b>
+          </div>
+        </div>
+        <div id="oPinManual" style="display:none;background:rgba(210,153,34,.08);border:1px dashed rgba(210,153,34,.45);margin:8px -6px 0;padding:9px 11px;border-radius:8px">
+          <div style="font-family:'Space Mono',monospace;font-size:12px;color:var(--dim);margin-bottom:7px">⚠ no pin ref in alert — check Pinnacle's price and enter it to get vig/edge + extra bet:</div>
+          <div style="display:flex;gap:10px;align-items:end">
+            <div style="flex:1;min-width:0"><label id="oPinLblA">pin — YOUR side (Leg A) HK</label><input id="oPinManA" type="number" step="0.001" placeholder="e.g. 0.85" style="width:100%;box-sizing:border-box" onkeydown="if(event.key==='Enter')applyManualPin()"></div>
+            <div style="flex:1;min-width:0"><label id="oPinLblB">pin — other side HK</label><input id="oPinManB" type="number" step="0.001" placeholder="e.g. 1.05" style="width:100%;box-sizing:border-box" onkeydown="if(event.key==='Enter')applyManualPin()"></div>
+            <button class="btn-add" style="flex:0 0 auto;width:auto;margin-top:0;padding:9px 14px;background:linear-gradient(180deg,#e0a02e,#b07d15);color:#fff;white-space:nowrap" onclick="applyManualPin()">↳ update</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px;margin-top:6px">
+        <button class="btn-add" style="flex:1;margin-top:0;background:linear-gradient(180deg,#2ea043,#1a7f37);color:#fff" onclick="addArbLegs()">＋ Only arb legs</button>
+        <button class="btn-add" style="flex:1;margin-top:0;background:linear-gradient(180deg,#e0a02e,#b07d15);color:#fff" onclick="addExtraBet()">＋ Only bet extra</button>
+        <button class="btn-add" style="flex:1;margin-top:0;background:linear-gradient(180deg,#4493f8,#1f6feb);color:#fff" onclick="addAll()">＋ Add all</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: TODAY'S LOG -->
+    <div class="card" id="secLog">
+      <h2>② Today's Log</h2>
+      <div class="pillrow">
+        <span class="sub" style="margin-right:auto">date</span>
+        <input id="logdate" type="date" style="width:auto;padding:6px 9px;font-size:12px">
+      </div>
+      <table>
+        <thead><tr><th>bookie</th><th>selection</th><th class="num">odds</th><th class="num">stake</th><th></th></tr></thead>
+        <tbody id="logBody"><tr><td colspan="5" class="empty">no legs yet — add from calculator</td></tr></tbody>
+      </table>
+
+      <div class="stat">
+        <div><div class="k">legs</div><div class="v" id="sLegs">0</div></div>
+        <div><div class="k">turnover</div><div class="v" id="sTurn">0</div></div>
+        <div><div class="k">est. profit</div><div class="v pos" id="sReb">0</div></div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn-ghost" onclick="copyTSV()">📋 Copy rows (paste to Excel)</button>
+        <button class="btn-ghost" onclick="dlCSV()">⬇ Download CSV</button>
+        <button class="btn-ghost" onclick="clearLog()">✕ Clear</button>
+      </div>
+      <div class="note">
+        Columns match your <b>bet record</b> sheet: date · time to KO · bookie · league · event · selection · odds · stake · <i>(4 blanks: P/L, rebate, bet, spacer)</i> · pin vig · edge.<br>
+        "Copy rows" → click cell A-next-empty in bet record → paste. P/L, rebate &amp; bet formulas fill themselves; pin vig &amp; edge land in the right columns (Leg A row only).
+      </div>
+    </div>
+
+    <!-- SETTINGS (moved to bottom) -->
+    <div class="card" id="secSettings">
+      <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleCfg()">
+        <h2 style="margin:0">⚙ Bookie Settings · rebate &amp; PT</h2>
+        <span class="btn-ghost" id="cfgToggle">show</span>
+      </div>
+      <div id="cfgPanel" style="display:none;margin-top:14px">
+        <table id="cfgTable">
+          <thead><tr><th>bookie</th><th class="num">rebate %</th><th class="num">account PT %</th><th></th></tr></thead>
+          <tbody id="cfgBody"></tbody>
+        </table>
+        <div class="row row3" style="margin-top:12px;align-items:end;gap:8px">
+          <div>
+            <label>New bookie name</label>
+            <input id="newBk" placeholder="e.g. matchbook">
+          </div>
+          <div>
+            <label>rebate %</label>
+            <input id="newReb" type="number" step="0.01" placeholder="0.00">
+          </div>
+          <div>
+            <label>PT %</label>
+            <input id="newPt" type="number" step="1" placeholder="100">
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button class="btn-ghost" onclick="addBk()">＋ Add bookie</button>
+          <button class="btn-ghost" onclick="exportCfg()" style="margin-left:auto">⬇ Export settings</button>
+          <button class="btn-ghost" onclick="document.getElementById('cfgFile').click()">⬆ Import settings</button>
+          <input id="cfgFile" type="file" accept=".json" style="display:none" onchange="importCfg(this)">
+        </div>
+        <div class="note">
+          <b>Rebate</b>: + = you earn on turnover, − = you pay (ex 198). Used for the est-rebate tally.<br>
+          <b>PT (account %)</b>: your share of the line. At 50% PT the tool tells you to place <b>2×</b> your target stake. Place-stake = target ÷ PT.<br>
+          Edits auto-save in this browser. If reopening resets them, use <b>Export</b> to keep a backup and <b>Import</b> to reload.
+        </div>
+
+        <div class="divider"></div>
+        <h2 style="margin:14px 0 10px">⚖ Profit-mode rules</h2>
+        <table>
+          <thead><tr><th>Bookie A</th><th>Bookie B</th><th>mode</th><th></th></tr></thead>
+          <tbody id="ruleBody"></tbody>
+        </table>
+        <div class="row row3" style="margin-top:12px;align-items:end;gap:8px">
+          <div>
+            <label>Bookie A</label>
+            <select id="newRuleA"></select>
+          </div>
+          <div>
+            <label>Bookie B</label>
+            <select id="newRuleB"></select>
+          </div>
+          <div>
+            <label>mode</label>
+            <select id="newRuleMode">
+              <option value="maxA">max A · no loss B (100/0)</option>
+              <option value="s80">80% A / 20% B</option>
+              <option value="s70">70% A / 30% B</option>
+              <option value="s60">60% A / 40% B</option>
+              <option value="bal">balanced (50/50)</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn-ghost" style="margin-top:8px" onclick="addRule()">＋ Add rule</button>
+        <div class="note">
+          When Leg A and Leg B bookies match a rule (exact A→B order), that profit mode is applied and <b>locked</b> automatically. No match → balanced. Rules export/import with settings.
+        </div>
+
+        <div class="divider"></div>
+        <h2 style="margin:14px 0 10px">📈 Pin edge → mode rules</h2>
+        <table style="table-layout:fixed;width:100%">
+          <colgroup>
+            <col style="width:18%"><col style="width:18%"><col style="width:18%"><col style="width:36%"><col style="width:10%">
+          </colgroup>
+          <thead><tr>
+            <th>vig ≤ %</th><th>edge &gt; %</th><th>edge ≤ %</th><th>mode</th><th></th>
+          </tr></thead>
+          <tbody id="edgeBody"></tbody>
+        </table>
+        <div style="display:grid;grid-template-columns:18% 18% 18% 36% 10%;gap:0;margin-top:10px;align-items:end">
+          <div style="padding-right:8px"><label>vig ≤ %</label><input id="newEdgeVig" type="number" step="0.5" placeholder="12"></div>
+          <div style="padding-right:8px"><label>edge &gt; %</label><input id="newEdgeMin" type="number" step="0.1" placeholder="1.5"></div>
+          <div style="padding-right:8px"><label>edge ≤ %</label><input id="newEdgeMax" type="number" step="0.1" placeholder="3"></div>
+          <div style="padding-right:8px"><label>mode</label>
+            <select id="newEdgeMode">
+              <option value="maxA">max A (100/0)</option>
+              <option value="s80">80/20</option>
+              <option value="s70">70/30</option>
+              <option value="s60">60/40</option>
+              <option value="bal">balanced</option>
+            </select>
+          </div>
+          <div></div>
+        </div>
+        <button class="btn-ghost" style="margin-top:8px" onclick="addEdgeRule()">＋ Add edge band</button>
+        <div class="note">
+          When an alert has a <b>pin ref</b> line, vig + edge are computed and the <b>first matching band</b> (top to bottom) sets the mode, overriding the bookie rule. Leave edge-max blank for "no upper limit". A row with vig above its "vig ≤ %" always → balanced.
+        </div>
+
+        <div class="divider"></div>
+        <h2 style="margin:14px 0 10px">💰 Staking parameters</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;max-width:460px">
+          <div><label>Kelly multiplier</label><input id="stkKelly" type="number" step="0.001" onchange="setStaking('kelly',this.value)"></div>
+          <div><label>Bankroll</label><input id="stkBankroll" type="number" step="1000" onchange="setStaking('bankroll',this.value)"></div>
+          <div><label>Edge floor %</label><input id="stkFloor" type="number" step="0.05" onchange="setStaking('floor',this.value)"></div>
+        </div>
+        <div class="note" style="line-height:1.6">
+          <b>Extra-bet staking rule</b> (fixed): size the unhedged extra by Kelly on the pin edge, with —<br>
+          • <b>floor</b>: only bet if pin edge ≥ the edge-floor setting (below → no extra bet)<br>
+          • <b>haircut</b>: subtract <b>0.5%</b> from the edge before sizing<br>
+          • <b>edge cap</b>: cap the sizing edge at <b>5%</b> (guards against stale-price readings)<br>
+          • <b>vig tier</b>: full Kelly at pin vig ≤ 8%, half Kelly above<br>
+          • <b>per-bet cap</b>: stake never exceeds <b>2%</b> of bankroll<br>
+          • <b>rounding</b>: nearest 10 under 100, else nearest 100<br>
+          Adjustable: <b>Kelly multiplier</b>, <b>Bankroll</b>, and <b>Edge floor</b>. Exports/imports with settings.
+        </div>
+
+        <div class="divider"></div>
+        <h2 style="margin:14px 0 10px">🎨 Theme</h2>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="margin:0">Default theme</label>
+          <select id="themeSel" onchange="setTheme(this.value)" style="width:auto;min-width:160px">
+            <option value="dark">🌙 dark</option>
+            <option value="warmdark">🔥 warm dark</option>
+            <option value="light">☀️ light</option>
+            <option value="warmlight">🕯️ warm light</option>
+          </select>
+        </div>
+        <div class="note">
+          The 🌙/☀️ button top-right also cycles themes. Your choice is remembered for next time.
+        </div>
+
+        <div class="divider"></div>
+        <h2 style="margin:14px 0 10px;display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span>📌 Placed extra bets (this session)</span><span id="placedTotal" style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;white-space:nowrap"></span></h2>
+        <div id="clockWarn" style="display:none;font-family:'Space Mono',monospace;font-size:11px;color:#c1352d;background:rgba(193,53,45,.1);border:1px solid rgba(193,53,45,.3);border-radius:7px;padding:7px 10px;margin-bottom:8px"></div>
+        <div id="placedList"></div>
+        <div class="note">
+          Extra bets you've logged are remembered here so re-arbing the same game (same day + market) warns you — even after you clear or copy the log. Each entry auto-removes after its kickoff. Remove one to allow betting that game again.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">copied</div>
+
+<!-- floating quick-nav -->
+<div id="quickNav" style="position:fixed;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:9px;z-index:50">
+  <button class="qnav" style="--qc:#1f6feb" title="Calculator" onclick="jumpTo('secDir')">🧮</button>
+  <button class="qnav" style="--qc:#2ea043" title="Today's log" onclick="jumpTo('secLog')">📋</button>
+  <button class="qnav" style="--qc:#d29922" title="Placed bets" onclick="openPlaced()">✅</button>
+  <button class="qnav" style="--qc:#e0508a" title="Settings" onclick="openSettings()">⚙️</button>
+  <button class="qnav" style="--qc:#8957e5" title="Top" onclick="window.scrollTo({top:0,behavior:'smooth'})">⬆️</button>
+  <button class="qnav" style="--qc:#8957e5" title="Bottom" onclick="window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})">⬇️</button>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+// ===== LOCK GATE (full-block passcode; SHA-256, deterrent only) =====
+// To change the passcode: replace LOCK_HASH with the SHA-256 hex of your new code.
+const LOCK_HASH='36f817964b1ef56082c1f92ff9bce922de0f0ba0acc973155b1a4cfc5e6fa096';
+// self-contained SHA-256 (no crypto.subtle — works on file:// without a secure context)
+function sha256hex(ascii){
+  function rr(v,a){return (v>>>a)|(v<<(32-a));}
+  var mp=Math.pow, mw=mp(2,32), result='';
+  var words=[], bitLen=ascii.length*8;
+  var hash=sha256hex.h=sha256hex.h||[], k=sha256hex.k=sha256hex.k||[], pc=k.length, comp={};
+  for(var cand=2; pc<64; cand++){
+    if(!comp[cand]){
+      for(var i=0;i<313;i+=cand){comp[i]=cand;}
+      hash[pc]=(mp(cand,.5)*mw)|0; k[pc++]=(mp(cand,1/3)*mw)|0;
+    }
+  }
+  ascii+='\x80';
+  while(ascii.length%64-56)ascii+='\x00';
+  for(i=0;i<ascii.length;i++){
+    var j=ascii.charCodeAt(i);
+    if(j>>8)return '';
+    words[i>>2]|=j<<((3-i)%4)*8;
+  }
+  words[words.length]=(bitLen/mw)|0; words[words.length]=bitLen;
+  for(j=0;j<words.length;){
+    var w=words.slice(j,j+=16), oldHash=hash;
+    hash=hash.slice(0,8);
+    for(i=0;i<64;i++){
+      var w15=w[i-15], w2=w[i-2], a=hash[0], e=hash[4];
+      var t1=hash[7]+(rr(e,6)^rr(e,11)^rr(e,25))+((e&hash[5])^((~e)&hash[6]))+k[i]
+        +(w[i]=i<16?w[i]:(w[i-16]+(rr(w15,7)^rr(w15,18)^(w15>>>3))+w[i-7]+(rr(w2,17)^rr(w2,19)^(w2>>>10)))|0);
+      var t2=(rr(a,2)^rr(a,13)^rr(a,22))+((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
+      hash=[(t1+t2)|0].concat(hash); hash[4]=(hash[4]+t1)|0;
+    }
+    for(i=0;i<8;i++){hash[i]=(hash[i]+oldHash[i])|0;}
+  }
+  for(i=0;i<8;i++){for(j=3;j+1;j--){var b=(hash[i]>>(j*8))&255; result+=((b<16)?0:'')+b.toString(16);}}
+  return result;
+}
+function tryUnlock(){
+  const inp=$('lockPass'), err=$('lockErr');
+  const h=sha256hex(inp.value);
+  if(h!==LOCK_HASH){ err.textContent='wrong passcode'; inp.value=''; inp.focus(); return; }
+  // passcode correct — but do not unlock until the clock has been verified/confirmed
+  if(!CLOCK_OK){ err.textContent='confirm the clock below first'; renderLockClock(); return; }
+  const o=$('lockOverlay'); if(o)o.remove();
+}
+// render the clock-verification state inside the lock overlay
+function renderLockClock(){
+  const el=$('lockClock'); if(!el) return;
+  if(CLOCK_OK){
+    el.innerHTML='<span style="color:#3fb950">✓ time verified — you can unlock</span>';
+    return;
+  }
+  if(CLOCK_SYNCING){
+    el.innerHTML='<span style="color:#8b949e">⏳ verifying network time…</span>';
+    return;
+  }
+  // sync failed → confirm/correct on the lock screen (unlock stays blocked until resolved)
+  const devHKT = new Date().toLocaleString('en-GB',{timeZone:'Asia/Hong_Kong',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
+  el.innerHTML =
+      '<div style="color:#f0883e">⚠ could not verify network time'+(CLOCK_ERR?' ('+CLOCK_ERR+')':'')+'.</div>'
+    + '<div style="margin-top:4px;color:#e6edf3">device shows: <b>'+devHKT+' HKT</b></div>'
+    + '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'
+    +   '<button onclick="lockConfirmDeviceClock()" style="padding:5px 9px;border:1px solid #30363d;border-radius:6px;background:#238636;color:#fff;font-family:inherit;font-size:11px;cursor:pointer">✓ correct — use this</button>'
+    +   '<button onclick="lockShowCorrect()" style="padding:5px 9px;border:1px solid #30363d;border-radius:6px;background:#161b22;color:#e6edf3;font-family:inherit;font-size:11px;cursor:pointer">✎ enter correct HKT</button>'
+    +   '<button onclick="syncClock()" style="padding:5px 9px;border:1px solid #30363d;border-radius:6px;background:#161b22;color:#e6edf3;font-family:inherit;font-size:11px;cursor:pointer">retry</button>'
+    + '</div>'
+    + '<div id="lockCorrectRow" style="display:none;margin-top:8px">'
+    +   '<input id="lockCorrectInput" type="datetime-local" style="width:100%;box-sizing:border-box;padding:6px;font-family:inherit;font-size:12px;border:1px solid #30363d;border-radius:6px;background:#161b22;color:#e6edf3">'
+    +   '<button onclick="lockApplyCorrect()" style="margin-top:6px;width:100%;padding:6px;border:none;border-radius:6px;background:#238636;color:#fff;font-family:inherit;font-size:12px;cursor:pointer">apply</button>'
+    + '</div>';
+}
+function lockConfirmDeviceClock(){ CLOCK_OFFSET=0; CLOCK_OK=true; onClockConfirmed(); }
+function lockShowCorrect(){
+  const r=$('lockCorrectRow'); if(!r) return;
+  r.style.display='block';
+  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Hong_Kong',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date()).reduce((o,x)=>(o[x.type]=x.value,o),{});
+  const inp=$('lockCorrectInput'); if(inp) inp.value=parts.year+'-'+parts.month+'-'+parts.day+'T'+parts.hour+':'+parts.minute;
+}
+function lockApplyCorrect(){
+  const v=$('lockCorrectInput') && $('lockCorrectInput').value;
+  if(!v){ return; }
+  const [dp,tp]=v.split('T'); const [y,mo,dy]=dp.split('-').map(Number); const [hh,mm]=tp.split(':').map(Number);
+  const trueHKTms=Date.UTC(y,mo-1,dy,hh,mm)-8*3600*1000;
+  CLOCK_OFFSET=trueHKTms-Date.now(); CLOCK_OK=true; onClockConfirmed();
+}
+// shared: once the clock is confirmed by any means, refresh lock + placed UI and start the timer
+function onClockConfirmed(){
+  updateClockBanner();
+  renderLockClock();
+  if(typeof renderPlaced==='function') renderPlaced();
+  if(typeof startPruneTimer==='function') startPruneTimer();
+}
+function initLock(){
+  const btn=$('lockBtn'), inp=$('lockPass');
+  if(btn) btn.addEventListener('click', tryUnlock);
+  if(inp){ inp.addEventListener('keydown', e=>{ if(e.key==='Enter') tryUnlock(); }); inp.focus(); }
+  renderLockClock();
+  // verify network time now, while the passcode screen is up. Unlock is blocked until it resolves.
+  if(typeof syncClock==='function') startClockSyncOnce();
+}
+let CLOCK_SYNC_STARTED=false;
+function startClockSyncOnce(){ if(CLOCK_SYNC_STARTED) return; CLOCK_SYNC_STARTED=true; try{ syncClock(); }catch(e){} }
+// run as soon as possible so the gate is live before anything else
+if(document.readyState!=='loading') initLock();
+else document.addEventListener('DOMContentLoaded', initLock);
+// pin edge state (declared early — parseTG assigns these before their old declaration line)
+let PIN_VIG=null, PIN_EDGE=null, PIN_FAIR=null;
+// current parsed bet identity (for placed-history matching)
+let CUR_EV=null, CUR_DAY=null, CUR_MKT=null, CUR_LINE=null, CUR_KICK=null;
+let BET_AGAIN=false;  // override checkbox state
+let EXTRA_EDIT=null;   // user-typed override stake for logging (null = use computed); reset per alert / per override toggle
+// compute + store pin globals from Leg A's pin side and the other side (HK odds)
+function setPinFromSides(pinSideA, pinOther){
+  if(!(pinSideA>0) || !(pinOther>0)){ PIN_VIG=null; PIN_FAIR=null; PIN_EDGE=null; return false; }
+  const imp=hk=>1/(hk+1);
+  const iA=imp(pinSideA), iO=imp(pinOther), vig=iA+iO;
+  PIN_VIG = vig-1;
+  PIN_FAIR = iA/vig;
+  return true;
+}
+
+// theme — cycle: dark → warm dark → light → warm light
+const THEMES=['dark','warmdark','light','warmlight'];
+const THEME_ICON={dark:'🌙', warmdark:'🔥', light:'☀️', warmlight:'🕯️'};
+function applyTheme(t){
+  if(!THEMES.includes(t))t='warmlight';
+  if(t==='dark')document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme',t);
+  const b=$('themeBtn'); if(b){b.textContent=THEME_ICON[t]; b.title='theme: '+t+' (click to change)';}
+  const s=$('themeSel'); if(s)s.value=t;
+}
+function setTheme(t){ try{localStorage.setItem('arbTheme',t);}catch(e){} applyTheme(t); }  // from the settings dropdown
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')||'dark';
+  const next=THEMES[(THEMES.indexOf(cur)+1)%THEMES.length];
+  setTheme(next);
+}
+(function(){let t='warmlight';try{t=localStorage.getItem('arbTheme')||'warmlight';}catch(e){}applyTheme(t);})();
+
+// editable per-bookie config: [rebate fraction, PT fraction]
+const DEFAULTS={
+  'pin':       {reb:0.0005, pt:1.00},
+  'HKJB':      {reb:0,      pt:1.00},
+  'ex 198':    {reb:-0.02,  pt:1.00},
+  '198 fix':   {reb:0,      pt:1.00},
+  '96.one':    {reb:0.01,   pt:1.00}
+};
+let CFG=loadCfg();
+function loadCfg(){
+  try{const s=JSON.parse(localStorage.getItem('arbCfg'));if(s)return {...structuredClone(DEFAULTS),...s};}catch(e){}
+  return structuredClone(DEFAULTS);
+}
+function saveCfg(){localStorage.setItem('arbCfg',JSON.stringify(CFG));}
+function reb(bk){return CFG[bk]?CFG[bk].reb:0;}
+function pt(bk){return (CFG[bk]&&CFG[bk].pt>0)?CFG[bk].pt:1;}
+
+// profit-mode rules: exact A->B pair -> mode. First match wins; else 'bal'.
+const RULE_DEFAULTS=[
+  {a:'HKJB', b:'pin',     mode:'s80'},
+  {a:'HKJB', b:'ex 198',  mode:'s80'},
+  {a:'HKJB', b:'198 fix', mode:'s60'}
+];
+let RULES=loadRules();
+function loadRules(){
+  try{const s=JSON.parse(localStorage.getItem('arbRules'));if(Array.isArray(s))return s;}catch(e){}
+  return structuredClone(RULE_DEFAULTS);
+}
+function saveRules(){localStorage.setItem('arbRules',JSON.stringify(RULES));}
+
+// pin edge → mode bands. Values are fractions (vig 0.12 = 12%). First matching band wins.
+// A band matches when vig <= vigMax AND edge > eMin AND (eMax==null || edge <= eMax).
+const EDGE_DEFAULTS=[
+  {vigMax:0.05, eMin:0, eMax:null, mode:'s80'},   // tight market → 80/20
+  {vigMax:0.08, eMin:0, eMax:null, mode:'s60'},   // ≤8% → 60/40
+  {vigMax:0.12, eMin:0, eMax:null, mode:'bal'},   // ≤12% → balanced
+  {vigMax:0.20, eMin:0, eMax:null, mode:'bal'}    // ≤20% → balanced
+];
+let EDGE_RULES=loadEdge();
+function loadEdge(){
+  try{const s=JSON.parse(localStorage.getItem('arbEdge'));if(Array.isArray(s))return s;}catch(e){}
+  return structuredClone(EDGE_DEFAULTS);
+}
+function saveEdge(){localStorage.setItem('arbEdge',JSON.stringify(EDGE_RULES));}
+
+// staking parameters (stored only — not yet wired into stake sizing)
+const STAKING_DEFAULTS={ clv:0.015, kelly:0.125, bankroll:300000, cap:0.02, floor:0.01 };
+let STAKING=loadStaking();
+function loadStaking(){
+  try{const s=JSON.parse(localStorage.getItem('arbStaking'));if(s&&typeof s==='object')return {...structuredClone(STAKING_DEFAULTS),...s};}catch(e){}
+  return structuredClone(STAKING_DEFAULTS);
+}
+function saveStaking(){localStorage.setItem('arbStaking',JSON.stringify(STAKING));}
+
+// ===== PLACED HISTORY (extra bets already placed) — survives log clearing =====
+// entry: {ev, day, mkt:'hcp'|'ou', line, ts} ; key = day + '|' + ev-lower + '|' + mkt
+let PLACED=loadPlaced();
+function loadPlaced(){
+  try{const s=JSON.parse(localStorage.getItem('arbPlaced'));if(Array.isArray(s))return s;}catch(e){}
+  return [];
+}
+function savePlaced(){localStorage.setItem('arbPlaced',JSON.stringify(PLACED));}
+// ── NETWORK TIME SYNC ────────────────────────────────────────────────────────
+// The tool is hosted online (GitHub Pages) and must decide expiry against accurate time,
+// not a possibly-wrong device clock. On each load we read the server's HTTP `Date` header
+// (a HEAD request to our own origin — no CORS, as reliable as the hosting) and compute the
+// offset between server time and the device clock. Until this succeeds we do NOT prune
+// (bets stay visible) and show a warning, so a failed sync can never remove a live bet.
+let CLOCK_OFFSET=0;     // ms to add to Date.now() to get accurate (server) time
+let CLOCK_OK=false;     // has a sync succeeded this session?
+let CLOCK_SYNCING=false;// currently attempting a network sync (for the lock-screen status)
+let CLOCK_ERR='';       // last sync failure reason (for diagnostics on the lock screen)
+function nowAccurate(){ return Date.now()+CLOCK_OFFSET; }
+async function syncClock(){
+  CLOCK_SYNCING=true; CLOCK_ERR=''; if(typeof renderLockClock==='function') renderLockClock();
+  const errs=[];
+  // helper: fetch with a timeout so a dead source can't hang the UI for 30-40s
+  const fetchT = (url, opts, ms)=> Promise.race([
+    fetch(url, opts),
+    new Promise((_,rej)=> setTimeout(()=> rej(new Error('timeout')), ms||6000))
+  ]);
+  // ── Attempt 1: SAME-ORIGIN Date header. Same-origin responses expose all headers to JS
+  //    (the CORS header-hiding that breaks cross-origin does NOT apply here), and it's on
+  //    your own server so it's always reachable with a valid cert. Plain GET, no fancy opts. ──
+  const origin = (location.origin && location.origin.startsWith('http')) ? location.origin : null;
+  if(origin){
+    const selfUrl = location.href.split('#')[0].split('?')[0] + '?_t=' + Date.now();
+    try{
+      const res = await fetchT(selfUrl, {cache:'no-store'}, 6000);
+      const d = res.headers.get('date');
+      const ms = d ? Date.parse(d) : NaN;
+      if(isNaN(ms)) throw new Error('same-origin: no Date header (status '+res.status+')');
+      CLOCK_OFFSET = ms - Date.now();
+      CLOCK_OK = true; CLOCK_SYNCING=false; CLOCK_ERR='';
+      updateClockBanner(); if(typeof renderLockClock==='function') renderLockClock();
+      renderPlaced(); startPruneTimer(); return;
+    }catch(e){ errs.push('same-origin: '+((e&&e.message)?e.message:String(e))); }
+  }
+  // ── Attempt 2: timeapi.io (JSON body), with a 6s timeout so it can't hang. ──
+  try{
+    const res = await fetchT('https://timeapi.io/api/time/current/zone?timeZone=UTC', {cache:'no-store'}, 6000);
+    if(!res.ok) throw new Error('status '+res.status);
+    const j = await res.json();
+    const ms = j.dateTime ? Date.parse(j.dateTime+'Z') : NaN;
+    if(isNaN(ms)) throw new Error('unparseable '+JSON.stringify(j.dateTime));
+    CLOCK_OFFSET = ms - Date.now();
+    CLOCK_OK = true; CLOCK_SYNCING=false; CLOCK_ERR='';
+    updateClockBanner(); if(typeof renderLockClock==='function') renderLockClock();
+    renderPlaced(); startPruneTimer(); return;
+  }catch(e){ errs.push('timeapi.io: '+((e&&e.message)?e.message:String(e))); }
+  // all failed → device-clock fallback (user confirms/corrects). Never prunes until confirmed.
+  CLOCK_OK = false; CLOCK_SYNCING=false; CLOCK_ERR = errs.join(' | ');
+  updateClockBanner();
+  if(typeof renderLockClock==='function') renderLockClock();
+  renderPlaced();
+}
+let PRUNE_TIMER=null;
+// re-check expiry once a minute so bets clear on their own while the page sits idle.
+// only re-renders when something actually expired, to avoid disrupting the UI needlessly.
+function startPruneTimer(){
+  if(PRUNE_TIMER) return;                 // already running
+  PRUNE_TIMER = setInterval(()=>{
+    if(!CLOCK_OK) return;
+    const before = PLACED.length;
+    prunePlaced();
+    if(PLACED.length !== before) renderPlaced();   // redraw only if a bet was removed
+  }, 60000);                              // every 60s
+}
+// Clock verification happens on the lock screen (you can't unlock until CLOCK_OK is true),
+// so by the time the tool is open the clock is always confirmed. This banner therefore just
+// stays hidden; it's kept as a no-op so the various updateClockBanner() calls remain valid.
+function updateClockBanner(){
+  const el=$('clockWarn'); if(!el) return;
+  el.style.display='none'; el.innerHTML='';
+}
+// drop entries whose kickoff has passed — but ONLY once network time is confirmed.
+// if the clock isn't verified yet (or sync failed), we keep everything so a live bet is never removed.
+function prunePlaced(){
+  if(!CLOCK_OK) return;                 // time not confirmed → do not prune
+  const now=nowAccurate();
+  const before=PLACED.length;
+  PLACED=PLACED.filter(p=> !p.kick || p.kick>now );
+  if(PLACED.length!==before) savePlaced();
+}
+// find an existing placed entry matching event+day+market-type (line-agnostic)
+function placedMatch(ev,day,mkt){
+  if(!ev||!day||!mkt) return null;
+  const e=ev.trim().toLowerCase();
+  return PLACED.find(p=> p.day===day && (p.ev||'').trim().toLowerCase()===e && p.mkt===mkt ) || null;
+}
+// record an extra bet as placed (called when logging via Only-extra / Add-all)
+// accumulates each placement as a "leg"; the record's amt is the SUM of all legs' stakes.
+function recordPlaced(ev,day,mkt,line,kick,amt,sel,odds,lg){
+  if(!ev||!day||!mkt) return;
+  const leg={ line:(line!=null?line:''), sel:(sel!=null?sel:''), amt:(amt!=null?Number(amt):null), odds:(odds!=null?odds:null), ts:Date.now() };
+  const sumLegs=(legs)=> legs.reduce((t,l)=> t+(l.amt!=null?Number(l.amt):0), 0);
+  const existing=placedMatch(ev,day,mkt);
+  if(existing){
+    // migrate an old single-bet record into the legs shape on first re-record
+    if(!Array.isArray(existing.legs)){
+      existing.legs = (existing.amt!=null||existing.sel||existing.line!=='')
+        ? [{ line:existing.line||'', sel:existing.sel||'', amt:(existing.amt!=null?Number(existing.amt):null), odds:(existing.odds!=null?existing.odds:null), ts:existing.ts||Date.now() }]
+        : [];
+    }
+    existing.legs.push(leg);
+    // top-level fields: line/sel/odds reflect the latest leg (for the warning); amt = summed total
+    existing.line=leg.line; existing.sel=leg.sel; existing.odds=leg.odds;
+    existing.amt=sumLegs(existing.legs);
+    if(lg!=null&&lg!=='') existing.lg=lg;
+    existing.ts=Date.now();
+    if(kick) existing.kick=kick;
+    savePlaced(); renderPlaced();
+    return;
+  }
+  PLACED.push({ev,day,mkt,line:leg.line,kick:kick||null,amt:(leg.amt!=null?leg.amt:null),sel:leg.sel,odds:leg.odds,lg:(lg!=null?lg:''),legs:[leg],ts:Date.now()});
+  savePlaced();
+  renderPlaced();
+}
+function removePlaced(i){ PLACED.splice(i,1); savePlaced(); renderPlaced(); calc(); flash('removed from placed history'); }
+let PLACED_OPEN={};  // {originalIndex: true} — which rows have "show more" expanded
+function togglePlacedMore(i){ PLACED_OPEN[i]=!PLACED_OPEN[i]; renderPlaced(); }
+// does a selection string look like the away/plus side? (used only to flag mixed directions, not to compute risk)
+function legDir(sel){ sel=(sel||''); if(/客|away/i.test(sel)||/\+\s*\d/.test(sel)) return '+'; if(/主|home/i.test(sel)||/-\s*\d/.test(sel)) return '-'; return '?'; }
+// derive over/under from a totals selection text (大/over vs 小/under); returns '' if unknown
+function ouLabel(sel){ sel=(sel||''); if(/大|over|\bo\b/i.test(sel)) return 'over'; if(/小|under|\bu\b/i.test(sel)) return 'under'; return ''; }
+function renderPlaced(){
+  prunePlaced();
+  const box=$('placedList'); if(!box) return;
+  if(!PLACED.length){ box.innerHTML='<div class="note" style="margin:0">nothing placed yet</div>'; const t=$('placedTotal'); if(t)t.innerHTML=''; return; }
+  // display sorted by kickoff (soonest first); entries without a KO sink to the bottom.
+  // keep the original array index so remove() still targets the right entry.
+  const rows = PLACED.map((p,i)=>({p,i}))
+    .sort((a,b)=>{
+      const ka=a.p.kick?+new Date(a.p.kick):Infinity, kb=b.p.kick?+new Date(b.p.kick):Infinity;
+      return ka-kb;
+    });
+  box.innerHTML = rows.map(({p,i})=>{
+    const isOU = p.mkt==='ou';
+    // market label: for totals, prefix over/under derived from the (latest) selection text
+    const ou = isOU ? ouLabel(p.sel) : '';
+    const mk = isOU ? ('total'+(ou?(' '+ou):'')) : 'handicap';
+    const ln = (p.line!==''&&p.line!=null) ? (' '+p.line) : '';
+    // show KO in HKT (matches the alert) regardless of the viewer's timezone
+    const ko = p.kick ? new Date(p.kick).toLocaleString([], {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Hong_Kong'})+' HKT' : '';
+    const lgPre = (p.lg&&p.lg!=='') ? '<span style="color:var(--acc)">'+p.lg+'</span> · ' : '';
+    const amtStr = (p.amt!=null&&p.amt!=='') ? Number(p.amt).toLocaleString() : '';
+    // legs list (only present on records created/updated after this feature)
+    const legs = Array.isArray(p.legs) ? p.legs : [];
+    const distinctLines = [...new Set(legs.map(l=>String(l.line)))];
+    const mixed = new Set(legs.map(l=>legDir(l.sel)).filter(d=>d!=='?')).size>1;
+    // show the expander when there's more than one leg AND either the lines differ or the directions are mixed
+    const multi = legs.length>1 && (distinctLines.length>1 || mixed);
+    const mixFlag = mixed ? ' <span style="color:#f85149" title="bets on opposite sides — check exposure manually">⚠ mixed sides</span>' : '';
+    let moreBtn='', moreBody='';
+    if(multi){
+      const open=!!PLACED_OPEN[i];
+      moreBtn = '<button class="btn-ghost" style="padding:3px 9px;font-size:11px" onclick="togglePlacedMore('+i+')">'+(open?'hide':'show '+legs.length)+'</button>';
+      if(open){
+        moreBody = '<div style="margin-top:5px;padding-left:10px;border-left:2px solid var(--line);color:var(--dim);font-size:11px">'
+          + legs.map(l=>{
+              const s=(l.sel&&l.sel!=='')?l.sel:(mk+' '+(l.line!=null?l.line:''));
+              const a=(l.amt!=null)?Number(l.amt).toLocaleString():'—';
+              return '• '+s+' · <b style="color:#d29922">'+a+'</b>';
+            }).join('<br>')
+          + '</div>';
+      }
+    }
+    // Line 1: KO · league · event ......... [remove]
+    // Line 2: market+line · risk ......... [show more]
+    return '<div style="padding:7px 9px;border:1px solid var(--line);border-radius:7px;margin-bottom:5px;font-family:\'Space Mono\',monospace;font-size:12px">'
+      +  '<div style="display:flex;align-items:flex-start;gap:8px">'
+      +    '<span style="flex:1;min-width:0">'+(ko?'<span style="color:var(--dim)">'+ko+'</span> · ':'')+lgPre+'<b>'+(p.ev||'?')+'</b></span>'
+      +    '<button class="btn-ghost" style="padding:3px 9px" onclick="removePlaced('+i+')">remove</button>'
+      +  '</div>'
+      +  '<div style="display:flex;align-items:flex-start;gap:8px;margin-top:4px">'
+      +    '<span style="flex:1;min-width:0"><span style="color:var(--dim)">'+mk+ln+'</span>'+(amtStr?' · <b style="color:#d29922">'+amtStr+'</b>':'')+mixFlag+'</span>'
+      +    (moreBtn||'')
+      +  '</div>'
+      +  moreBody
+      +'</div>';
+  }).join('');
+  // total across all placed records (sum of stakes) — shown on the title line, right-aligned
+  const grand = PLACED.reduce((t,p)=> t+(p.amt!=null?Number(p.amt):0), 0);
+  const totEl=$('placedTotal');
+  if(totEl) totEl.innerHTML = grand>0 ? ('Σ '+'<span style="color:#d29922">'+grand.toLocaleString()+'</span>') : '';
+}
+function renderStaking(){
+  if($('stkKelly'))    $('stkKelly').value    = STAKING.kelly;
+  if($('stkBankroll')) $('stkBankroll').value = STAKING.bankroll;
+  if($('stkFloor'))    $('stkFloor').value    = ((STAKING.floor!=null?STAKING.floor:0.01)*100).toFixed(2);
+}
+function setStaking(k,v){
+  v=parseFloat(v);
+  if(isNaN(v)){renderStaking();return;}
+  if(k==='kelly')         STAKING.kelly=v;
+  else if(k==='bankroll') STAKING.bankroll=v;
+  else if(k==='floor')    STAKING.floor=v/100;
+  saveStaking();
+  if(typeof calc==='function') calc();  // refresh the extra-stake line
+}
+
+function toggleCfg(){
+  const p=$('cfgPanel'),t=$('cfgToggle');
+  const open=p.style.display==='none';
+  p.style.display=open?'block':'none';t.textContent=open?'hide':'show';
+}
+// collapse the Bookie Settings panel (used when jumping to calc/log via quick-nav)
+function collapseCfg(){ const p=$('cfgPanel'),t=$('cfgToggle'); if(p&&p.style.display!=='none'){p.style.display='none'; if(t)t.textContent='show';} }
+// smooth-scroll a section into view (quick-nav) — also collapse settings so it's out of the way
+function jumpTo(id){ collapseCfg(); const el=$(id); if(el&&el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+// open Settings panel (if collapsed) and scroll to it
+function openSettings(){ const p=$('cfgPanel'),t=$('cfgToggle'); if(p&&p.style.display==='none'){p.style.display='block'; if(t)t.textContent='hide';} const el=$('secSettings'); if(el&&el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+// open Settings and jump to the Placed extra bets panel
+function openPlaced(){  const p=$('cfgPanel'),t=$('cfgToggle');
+  p.style.display='block'; if(t)t.textContent='hide';
+  renderPlaced();
+  const el=$('placedList');
+  if(el&&el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function renderCfg(){
+  $('cfgBody').innerHTML=Object.keys(CFG).map(bk=>`<tr>
+    <td>${bk}</td>
+    <td class="num"><input style="text-align:right;padding:5px 7px;font-size:13px" type="number" step="0.01"
+       value="${(CFG[bk].reb*100).toFixed(2)}" onchange="setCfg('${bk}','reb',this.value)"></td>
+    <td class="num"><input style="text-align:right;padding:5px 7px;font-size:13px" type="number" step="1"
+       value="${(CFG[bk].pt*100).toFixed(0)}" onchange="setCfg('${bk}','pt',this.value)"></td>
+    <td class="del" title="remove" onclick="removeBk('${bk.replace(/'/g,"\\'")}')">✕</td>
+  </tr>`).join('');
+}
+function addBk(){
+  const name=$('newBk').value.trim();
+  if(!name){flash('enter a bookie name');return;}
+  if(CFG[name]){flash('"'+name+'" already exists');return;}
+  CFG[name]={reb:(parseFloat($('newReb').value)||0)/100, pt:(parseFloat($('newPt').value)||100)/100};
+  saveCfg();
+  $('newBk').value='';$('newReb').value='';$('newPt').value='';
+  renderCfg();syncDropdowns();renderRules();flash('added "'+name+'"');
+}
+function removeBk(bk){
+  if(!confirm('Remove "'+bk+'" from settings?'))return;
+  delete CFG[bk];saveCfg();renderCfg();syncDropdowns();renderRules();flash('removed "'+bk+'"');
+}
+function renderRules(){
+  const modeLabel={maxA:'max A · no loss B', s80:'80% A / 20% B', s70:'70% A / 30% B', s60:'60% A / 40% B', bal:'balanced'};
+  $('ruleBody').innerHTML=RULES.map((r,i)=>`<tr>
+    <td>${r.a}</td><td>${r.b}</td><td>${modeLabel[r.mode]||r.mode}</td>
+    <td class="del" title="remove" onclick="removeRule(${i})">✕</td>
+  </tr>`).join('') || '<tr><td colspan="4" class="empty">no rules — all pairs use balanced</td></tr>';
+  // fill the A/B dropdowns from current bookies
+  const opts=Object.keys(CFG).map(b=>`<option>${b}</option>`).join('');
+  const ra=$('newRuleA'), rb=$('newRuleB');
+  if(ra&&rb){const a=ra.value,b=rb.value;ra.innerHTML=opts;rb.innerHTML=opts;if(CFG[a])ra.value=a;if(CFG[b])rb.value=b;}
+}
+function addRule(){
+  const a=$('newRuleA').value, b=$('newRuleB').value, mode=$('newRuleMode').value;
+  if(!a||!b){flash('pick both bookies');return;}
+  if(a===b){flash('A and B must differ');return;}
+  if(RULES.some(r=>r.a===a&&r.b===b)){flash('rule for '+a+'→'+b+' exists');return;}
+  RULES.push({a,b,mode});saveRules();renderRules();applyRuleMode();flash('rule added: '+a+'→'+b);
+}
+function removeRule(i){RULES.splice(i,1);saveRules();renderRules();applyRuleMode();flash('rule removed');}
+
+const MODE_LABEL={maxA:'max A (100/0)', s80:'80/20', s70:'70/30', s60:'60/40', bal:'balanced'};
+function renderEdge(){
+  $('edgeBody').innerHTML=EDGE_RULES.map((b,i)=>`<tr>
+    <td>${(b.vigMax*100).toFixed(1)}</td>
+    <td>${(b.eMin*100).toFixed(2)}</td>
+    <td>${b.eMax==null?'—':(b.eMax*100).toFixed(2)}</td>
+    <td>${MODE_LABEL[b.mode]||b.mode}</td>
+    <td class="del" title="remove" onclick="removeEdge(${i})">✕</td>
+  </tr>`).join('') || '<tr><td colspan="5" class="empty">no bands — pin edge won\'t override; balanced used</td></tr>';
+}
+function addEdgeRule(){
+  const vig=parseFloat($('newEdgeVig').value);
+  const eMin=parseFloat($('newEdgeMin').value);
+  const eMaxRaw=$('newEdgeMax').value.trim();
+  const mode=$('newEdgeMode').value;
+  if(isNaN(vig)||isNaN(eMin)){flash('fill vig and edge-min');return;}
+  const band={vigMax:vig/100, eMin:eMin/100, eMax:(eMaxRaw===''?null:parseFloat(eMaxRaw)/100), mode};
+  EDGE_RULES.push(band);
+  // keep bands ordered by vig tier, then edge — so "first match" respects the tiers
+  EDGE_RULES.sort((a,b)=> (a.vigMax-b.vigMax) || (a.eMin-b.eMin));
+  saveEdge();
+  $('newEdgeVig').value='';$('newEdgeMin').value='';$('newEdgeMax').value='';
+  renderEdge(); flash('edge band added');
+}
+function removeEdge(i){EDGE_RULES.splice(i,1);saveEdge();renderEdge();flash('band removed');}
+function exportCfg(){
+  const payload={bookies:CFG, rules:RULES, edge:EDGE_RULES, staking:STAKING};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='arbdesk_settings.json';a.click();
+  flash('settings exported');
+}
+function importCfg(input){
+  const f=input.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const obj=JSON.parse(r.result);
+      // new format {bookies,rules,edge} or legacy flat {bookie:{reb,pt}}
+      const src = obj.bookies || obj;
+      const clean={};
+      for(const k in src){
+        const v=src[k]||{};
+        if(typeof v.reb!=='number' && typeof v.pt!=='number') continue; // skip non-bookie keys
+        clean[k]={reb:typeof v.reb==='number'?v.reb:0, pt:typeof v.pt==='number'&&v.pt>0?v.pt:1};
+      }
+      if(!Object.keys(clean).length){flash('file had no bookies');return;}
+      CFG=clean; saveCfg();
+      if(Array.isArray(obj.rules)){RULES=obj.rules.filter(r=>r&&r.a&&r.b&&r.mode);saveRules();}
+      if(Array.isArray(obj.edge)){EDGE_RULES=obj.edge.filter(b=>b&&typeof b.vigMax==='number'&&b.mode);saveEdge();}
+      if(obj.staking&&typeof obj.staking==='object'){STAKING={...STAKING_DEFAULTS,...obj.staking};saveStaking();}
+      renderCfg(); renderRules(); renderEdge(); renderStaking(); syncDropdowns(); applyRuleMode();
+      flash('imported settings');
+    }catch(e){flash('couldn\'t read that file');}
+    input.value='';
+  };
+  r.readAsText(f);
+}
+function syncDropdowns(){
+  ['bkA','bkB'].forEach(id=>{
+    const sel=$(id), cur=sel.value;
+    sel.innerHTML=Object.keys(CFG).map(b=>`<option>${b}</option>`).join('');
+    if(CFG[cur])sel.value=cur;
+  });
+  calc();
+}
+
+// ---- TG alert parser ----
+// maps the bookie names that appear in TG messages -> your settings names
+const BK_MAP={
+  'HKJC':'HKJB','HKJB':'HKJB',
+  '198198交易所':'ex 198','198交易所':'ex 198','198':'ex 198',
+  'pinnacle':'pin','pin':'pin','PS3838':'pin',
+  '96.one':'198 fix','96one':'198 fix'
+};
+function mapBk(raw){
+  raw=(raw||'').trim();
+  const low=raw.toLowerCase();
+  // exact match (case-insensitive)
+  for(const k in BK_MAP){if(k.toLowerCase()===low)return BK_MAP[k];}
+  // loose contains-match (case-insensitive)
+  for(const k in BK_MAP){if(low.includes(k.toLowerCase()))return BK_MAP[k];}
+  // fall back: if the raw name is itself a known bookie, use it
+  if(CFG[raw])return raw;
+  for(const c in CFG){if(c.toLowerCase()===low)return c;}
+  return raw; // unknown — leave as-is, user can fix dropdown
+}
+function setSel(id,val){const s=$(id);if([...s.options].some(o=>o.value===val)){s.value=val;}else if(val){const o=document.createElement('option');o.textContent=val;s.appendChild(o);s.value=val;}}
+
+function reuseTG(){
+  if(!$('tgPaste').value.trim()){flash('nothing to reuse — paste an alert first');return;}
+  parseTG();          // re-fill all fields from the alert still in the box
+  flash('reused alert');
+}
+function parseTG(){
+  const txt=$('tgPaste').value;
+  const st=$('tgStatus');
+  if(!txt.trim()){st.textContent='';return;}
+  let found={};
+
+  // event: line with "vs" / "對" near ⚽ or first such line
+  let evM=txt.match(/⚽️?\s*(.+?)(?:\n|🏆|$)/) || txt.match(/([^\n]+?\s+(?:vs|對|对|v)\s+[^\n]+)/i);
+  if(evM){
+    // strip any leading emoji/symbol/punctuation so team names are clean
+    found.event=evM[1].replace(/^[^\p{L}\p{N}]+/u,'').trim();
+  }
+  // split event into home / away teams (home = first)
+  if(found.event){
+    let tm=found.event.split(/\s+(?:vs|對|对|v)\s+/i);
+    if(tm.length===2){
+      found.home=tm[0].replace(/^[^\p{L}\p{N}]+/u,'').trim();
+      found.away=tm[1].trim();
+    }
+  }
+
+  // league: line after 🏆, or the "International Matches" style line
+  let lgM=txt.match(/🏆\s*(.+?)(?:\n|📅|$)/);
+  if(lgM)found.league=lgM[1].trim();
+
+  // bet-type / handicap line: 📊 OU O/U 2.25 | AH -1 | AH -0.5/1 (split) | 让球 -0.5
+  let typeM=txt.match(/📊\s*(.+?)(?:\n|$)/);
+  if(typeM){
+    found.market=typeM[1].trim();
+    // split/quarter line like -0.5/1 or 0/0.5 → average the two
+    let splitM=found.market.match(/([+\-]?\d+(?:\.\d+)?)\s*\/\s*([+\-]?\d+(?:\.\d+)?)/);
+    if(splitM){
+      let n1=parseFloat(splitM[1]);
+      let n2=parseFloat(splitM[2]);
+      // if second number has no sign, inherit sign of the first (e.g. -0.5/1 means -0.5 and -1).
+      // test the STRING sign, not the parsed number, so a leading "-0" still counts as negative
+      // (parseFloat('-0') === 0, which would otherwise lose the minus — e.g. -0/0.5 → -0.25 not +0.25).
+      const n1neg=/^\s*-/.test(splitM[1]);
+      if(!/[+\-]/.test(splitM[2]) && n1neg) n2=-Math.abs(n2);
+      found.line=((n1+n2)/2).toString();
+    }else{
+      let numM=found.market.match(/([+\-]?\d+(?:\.\d+)?)/);
+      if(numM)found.line=numM[1];
+    }
+    found.isAH=/AH|让|讓|handicap|hcp/i.test(found.market) || (!/OU|O\/U|over|under|大|小|total/i.test(found.market) && /[+\-]/.test(found.line||''));
+  }
+
+  // the money line: 💰 ... @x.xxx vs ... @y.yyy
+  // capture: bkA selA @oddsA  vs  bkB selB @oddsB
+  let money=txt.match(/💰?\s*(.+?)@\s*([\d.]+)\s*(?:vs|對|对)\s*(.+?)@\s*([\d.]+)/i);
+  if(money){
+    let aRaw=money[1].trim(), oA=parseFloat(money[2]);
+    let bRaw=money[3].trim(), oB=parseFloat(money[4]);
+    // peel a known bookie name off the front (longest match first), else split on first space
+    const keys=Object.keys(BK_MAP).sort((a,b)=>b.length-a.length);
+    const splitLeg=(s)=>{
+      s=s.trim();
+      for(const k of keys){if(s.startsWith(k))return {bk:k,sel:s.slice(k.length).trim()};}
+      const sp=s.indexOf(' ');
+      return sp>0?{bk:s.slice(0,sp),sel:s.slice(sp+1).trim()}:{bk:s,sel:''};
+    };
+    const cleanSel=(s)=>s.replace(/Back|Lay|\(OVER\)|\(UNDER\)/gi,'').replace(/\s+/g,' ').trim();
+    let A=splitLeg(aRaw), B=splitLeg(bRaw);
+    found.bkA=mapBk(A.bk); found.oddsA=oA;
+    found.bkB=mapBk(B.bk); found.oddsB=oB;
+    let sA=cleanSel(A.sel), sB=cleanSel(B.sel);
+
+    // The money line often states the explicit handicap inside brackets, e.g. Back主(Armenia -0.75).
+    // That number is authoritative — prefer it over the 📊 line.
+    const explicit=(raw)=>{
+      let m=raw.match(/\(([^)]*?[+\-]?\d+(?:\.\d+)?)\)/);  // text inside (...) containing a number
+      if(m) return m[1].replace(/\s+/g,' ').trim();        // e.g. "Armenia -0.75"
+      return null;
+    };
+    let expA=explicit(aRaw), expB=explicit(bRaw);
+
+    // flip a signed handicap number
+    const flip=(n)=>{n=parseFloat(n); n=-n; return (n>0?'+':'')+n;};
+    // ensure the number in "Team ±X" has a sign, leaving the team name intact
+    const norm=(exp)=>{
+      let m=exp.match(/^(.*?)\s*([+\-]?\d+(?:\.\d+)?)\s*$/);
+      if(!m) return exp;
+      let team=m[1].trim(), num=m[2];
+      if(!/^[+\-]/.test(num)) num='+'+num;
+      return team+' '+num;
+    };
+    // resolve 主/客 to a team name + signed handicap; otherwise append line for O/U
+    const resolve=(sel,exp)=>{
+      // if the money line gave an explicit (Team ±X), use it verbatim (just normalise the sign)
+      if(found.isAH && exp) return norm(exp);
+      let isHome=/主|home|H\b/i.test(sel), isAway=/客|away|A\b/i.test(sel);
+      if(found.isAH && found.line!=null){
+        let homeLine=found.line, awayLine=flip(found.line);
+        if(isHome) return ((found.home||sel.replace(/主|home/gi,'').trim()||'主'))+' '+homeLine;
+        if(isAway) return ((found.away||sel.replace(/客|away/gi,'').trim()||'客'))+' '+awayLine;
+        if(found.home && sel.includes(found.home)) return found.home+' '+homeLine;
+        if(found.away && sel.includes(found.away)) return found.away+' '+awayLine;
+        return /\d/.test(sel)?sel:sel+' '+found.line;
+      }
+      if(found.line!=null && sel && !/\d/.test(sel)) return sel+' '+found.line;
+      return sel;
+    };
+    // Determine each leg's SIDE from the 主/客 marker in the raw money-line text.
+    // This is reliable even when the bet text spells the team differently than the event line.
+    const sideOf=(raw)=>/主/.test(raw)?'home':/客/.test(raw)?'away':null;
+    const sideA=sideOf(aRaw), sideB=sideOf(bRaw);
+    found.sideA=sideA;  // 'home'(主) or 'away'(客) — used to pick the matching pin reference
+    // for O/U bets, capture whether Leg A is over(大) or under(小)
+    found.ouA = /大|over/i.test(aRaw)?'over' : /小|under/i.test(aRaw)?'under' : null;
+    // Handicap number: prefer the explicit (Team ±X) in the bet text; else the 📊 line.
+    const numOf=(exp)=>{
+      if(!exp) return null;
+      let m=exp.match(/([+\-]?\d+(?:\.\d+)?)\s*$/);
+      return m?m[1]:null;
+    };
+    const expNumA=numOf(expA), expNumB=numOf(expB);
+
+    // build "Team ±X" for a leg given its side
+    const buildAH=(side,ownNum,otherNum,otherSide,rawSel)=>{
+      // the handicap for THIS side
+      let num = ownNum;
+      if(num==null && otherNum!=null && otherSide && otherSide!==side) num=flip(otherNum);  // opposite of the other leg
+      if(num==null && found.line!=null) num = (side==='home') ? found.line : flip(found.line);
+      if(num==null) return rawSel;
+      if(!/^[+\-]/.test(num)) num='+'+num;
+      const team = side==='home' ? (found.home||'主') : side==='away' ? (found.away||'客') : null;
+      return team ? (team+' '+num) : rawSel;
+    };
+
+    if(found.isAH && (sideA||sideB)){
+      found.selA = sideA ? buildAH(sideA, expNumA, expNumB, sideB, sA) : resolve(sA,expA);
+      found.selB = sideB ? buildAH(sideB, expNumB, expNumA, sideA, sB) : resolve(sB,expB);
+    }else{
+      found.selA=resolve(sA,expA);
+      found.selB=resolve(sB,expB);
+    }
+    // final cleanup: swap any leftover 主/客 placeholder for the real team name
+    if(found.isAH){
+      const swap=(s)=>{
+        if(!s) return s;
+        if(found.home) s=s.replace(/^主/,found.home);
+        if(found.away) s=s.replace(/^客/,found.away);
+        return s.trim();
+      };
+      found.selA=swap(found.selA); found.selB=swap(found.selB);
+    }
+  }
+
+  // stake hint: 可投注: 218 HKD  or  Max投注: 778 HKD
+  let stM=txt.match(/(?:可投注|max\s*投注|投注)[:：]?\s*([\d,]+)/i);
+  if(stM)found.stake=parseFloat(stM[1].replace(/,/g,''));
+
+  // pin reference line: "pin ref: 主 0.848 客 0.901" or "大 X 小 Y" (HK odds) → vig + edge on Leg A
+  let pinM=txt.match(/pin(?:nacle)?\s*ref[:：]?\s*(.+?)(?:\n|$)/i);
+  if(pinM && found.oddsA>0){
+    const seg=pinM[1];
+    const grab=(labels)=>{ for(const L of labels){const m=seg.match(new RegExp(L+'\\s*([\\d.]+)'));if(m)return parseFloat(m[1]);} return null; };
+    const pinHome=grab(['主','home','H']);
+    const pinAway=grab(['客','away','A']);
+    const pinOver=grab(['大','over','O']);
+    const pinUnder=grab(['小','under','U']);
+    // pick the pin pair matching Leg A's market (handicap 主/客 or O/U 大/小)
+    // O/U side: prefer the BUILT SELECTION (what you're actually betting), then money-line marker
+    let ouA = null;
+    const selTxtA = (found.selA||'');
+    if(/大|over/i.test(selTxtA)) ouA='over';
+    else if(/小|under/i.test(selTxtA)) ouA='under';
+    if(!ouA) ouA = found.ouA;   // fall back to money-line marker
+    let pinSideA=null, pinOther=null;
+    if(found.sideA==='home' && pinHome!=null){pinSideA=pinHome; pinOther=pinAway;}
+    else if(found.sideA==='away' && pinAway!=null){pinSideA=pinAway; pinOther=pinHome;}
+    else if(ouA==='over' && pinOver!=null){pinSideA=pinOver; pinOther=pinUnder;}
+    else if(ouA==='under' && pinUnder!=null){pinSideA=pinUnder; pinOther=pinOver;}
+    // last resort: if only one pin pair type is present, use it
+    if(pinSideA==null){
+      if(pinOver!=null && pinUnder!=null){ pinSideA=pinOver; pinOther=pinUnder; ouA=ouA||'over'; }
+      else if(pinHome!=null && pinAway!=null){ pinSideA=pinHome; pinOther=pinAway; }
+    }
+    if(ouA) found.ouA=ouA;   // persist the resolved O/U side
+    if(pinSideA!=null && pinOther!=null){
+      const imp=hk=>1/(hk+1);                 // HK odds → implied prob
+      const iA_side=imp(pinSideA), iOther=imp(pinOther);
+      const vig=iA_side+iOther;                // book sum > 1
+      const fairA=iA_side/vig;                 // de-vigged fair prob for Leg A's side
+      const iLegA=imp(found.oddsA);            // your HKJC price implied
+      found.pinVig=(vig-1);                    // e.g. 0.037
+      found.pinEdge=(fairA-iLegA);             // e.g. +0.0104
+      found.pinFairA=fairA;
+    }
+    // remember which market the pin sides belong to, for the manual-entry labels
+    found.pinMarket = found.ouA ? 'ou' : (found.sideA ? 'hcp' : null);
+  }
+
+  // kickoff date+time: 📅 开赛: 06-05 01:00  (no year — infer it)
+  let dM=txt.match(/(?:开赛|開賽|📅)[^\d]*(\d{1,2})[-/](\d{1,2})(?:[^\d]+(\d{1,2}):(\d{2}))?/);
+  if(dM){
+    let mo=+dM[1], dy=+dM[2], hh=dM[3]!=null?+dM[3]:null;
+    let now=new Date(), yr=now.getFullYear();
+    let cand=new Date(yr,mo-1,dy);
+    // if it's well in the past (>60 days), assume next year (Dec→Jan rollover)
+    if((now-cand)/86400000 > 60) cand=new Date(yr+1,mo-1,dy);
+    // kickoff before noon belongs to the previous day's betting session → subtract a day
+    if(hh!=null && hh<12) cand=new Date(cand.getTime()-86400000);
+    found.date=cand.getFullYear()+'-'+String(cand.getMonth()+1).padStart(2,'0')+'-'+String(cand.getDate()).padStart(2,'0');
+    // ── TRUE EVENT KICKOFF (from the alert, in HKT) ──────────────────────────────
+    // This is the authoritative kickoff moment used to decide whether the event has started.
+    // It is deliberately INDEPENDENT of found.date (the log/record date, which may be shifted
+    // back a day for early-morning kickoffs — that shift is for record-keeping only and must
+    // never affect expiry). TG alert times are always HKT (GMT+8, no DST), so we anchor to a
+    // fixed +8 offset rather than the device's local timezone (the tool may be opened online
+    // from any timezone, and expiry must stay identical everywhere).
+    let mm=dM[4]!=null?+dM[4]:0;
+    const HKT_OFFSET_MS = 8*3600*1000;                 // HKT = UTC+8, constant year-round
+    const kickAtYear = y => Date.UTC(y, mo-1, dy, hh!=null?hh:23, mm) - HKT_OFFSET_MS;
+    // choose the year (prev / this / next) whose kickoff lands closest to now — this handles the
+    // Dec→Jan boundary correctly in BOTH directions (a "12-31" seen on Jan 2 is last year, not next).
+    const baseYr = now.getFullYear();
+    let koMs = kickAtYear(baseYr), best = Math.abs(now.getTime()-koMs);
+    for(const y of [baseYr-1, baseYr+1]){
+      const cand2 = kickAtYear(y), d = Math.abs(now.getTime()-cand2);
+      if(d < best){ best = d; koMs = cand2; }
+    }
+    found.kick = koMs;                                 // absolute ms timestamp (used by prunePlaced)
+    // human-readable true KO in HKT, for display / verification
+    found.kickHKT = new Date(koMs).toLocaleString('en-GB',{timeZone:'Asia/Hong_Kong',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})+' HKT';
+  }
+
+  // apply
+  if(found.date)$('logdate').value=found.date;
+  if(found.event)$('event').value=found.event;
+  if(found.league)$('league').value=found.league;
+  if(found.bkA)setSel('bkA',found.bkA);
+  if(found.selA)$('selA').value=found.selA;
+  if(found.oddsA)$('oddsA').value=found.oddsA;
+  if(found.bkB)setSel('bkB',found.bkB);
+  if(found.selB)$('selB').value=found.selB;
+  if(found.oddsB)$('oddsB').value=found.oddsB;
+  // alert gives Leg A stake (可投注): switch to know-A→compute-B mode
+  if(found.stake){setDir('B'); $('stakeB').value=found.stake;}
+  // store this alert's pin data so the edge recomputes live off the Odds A field
+  PIN_VIG = (found.pinVig!=null) ? found.pinVig : null;
+  PIN_FAIR = (found.pinFairA!=null) ? found.pinFairA : null;   // pin de-vigged fair prob for Leg A's side
+  // current-bet identity for placed-history matching
+  CUR_EV = found.event || $('event').value || null;
+  CUR_DAY = found.date || $('logdate').value || null;
+  CUR_MKT = found.isAH ? 'hcp' : ((found.ouA||/OU|O\/U|大|小|total/i.test(found.market||'')) ? 'ou' : (found.sideA?'hcp':null));
+  CUR_LINE = found.line!=null ? found.line : null;
+  CUR_KICK = found.kick || null;
+  BET_AGAIN=false; if($('betAgain'))$('betAgain').checked=false; EXTRA_EDIT=null;  // reset override each new alert
+  // clear any manual pin odds from a previous alert
+  if($('oPinManA'))$('oPinManA').value='';
+  if($('oPinManB'))$('oPinManB').value='';
+  recomputeEdge();   // sets PIN_EDGE from current Odds A + PIN_FAIR
+  applyRuleMode();  // pin edge (if present) or bookie-pair rule → profit mode, then recompute
+  calc();
+
+  // status feedback
+  if(found.oddsA&&found.oddsB){
+    let warn=[];
+    if(!CFG[found.bkA])warn.push('"'+found.bkA+'"');
+    if(!CFG[found.bkB])warn.push('"'+found.bkB+'"');
+    st.innerHTML='✓ parsed: <b>'+(found.bkA||'?')+'</b> @'+found.oddsA+' vs <b>'+(found.bkB||'?')+'</b> @'+found.oddsB+
+      (found.date?' &nbsp;<span style="color:var(--dim)">📅 '+found.date+'</span>':'')+
+      (found.market?' &nbsp;<span style="color:var(--dim)">['+found.market+']</span>':'')+
+      (found.pinVig!=null?' &nbsp;<span style="color:var(--dim)">pin vig '+(found.pinVig*100).toFixed(2)+'%</span> <b style="color:'+(found.pinEdge>=0?'var(--green)':'var(--red)')+'">edge '+(found.pinEdge>=0?'+':'')+(found.pinEdge*100).toFixed(2)+'%</b>':'')+
+      (warn.length?' &nbsp;<span style="color:var(--amber)">⚠ unknown bookie '+warn.join(', ')+' — pick from dropdown or add in settings</span>':'');
+  }else{
+    st.innerHTML='<span style="color:var(--amber)">⚠ couldn\'t find the odds line. Make sure the “@odds vs @odds” line is included.</span>';
+  }
+}
+function setCfg(bk,field,val){
+  CFG[bk][field]=parseFloat(val)/100;
+  saveCfg();calc();render();
+}
+
+// clock in calculator header
+function tick(){const d=new Date();const c=$('clock');if(c)c.textContent=d.toLocaleString('en-GB',{hour12:false}).replace(',','');}
+tick();setInterval(tick,1000);
+// default log date = today
+$('logdate').value=new Date().toISOString().slice(0,10);
+
+let log=[];
+
+function round(v,step){step=+step;return Math.round(v/step)*step;}
+
+let DIR='B';  // 'B' = know B, compute A (manual default) | 'A' = know A, compute B (pasted alerts)
+let MODE='bal';
+let ruleLocked=false;  // true when a bookie rule is forcing the mode
+// mode -> A-profit weight w (0.5 balanced .. 1.0 all on A)
+const MODE_W={bal:0.5, s60:0.6, s70:0.7, s80:0.8, maxA:1.0};
+function modeW(){return MODE_W[MODE]!=null?MODE_W[MODE]:0.5;}
+function isSplit(){return MODE!=='bal';}  // any weighted/max-A mode inputs Stake B
+function setMode(m,userClick){
+  if(userClick && ruleLocked){flash('mode is set by a bookie rule (edit in Settings)');return;}
+  if(MODE_W[m]==null)m='bal';
+  MODE=m;
+  $('modeSel').value=m;
+  if(isSplit() && DIR!=='B') setDir('B');  // weighted modes always input Stake B
+  // direction toggle only relevant in balanced mode
+  const dis=isSplit();
+  ['dirA','dirB'].forEach(id=>{$(id).disabled=dis;$(id).style.opacity=dis?'.4':'';$(id).style.cursor=dis?'not-allowed':'pointer';});
+  // grey the mode dropdown when locked by a rule
+  $('modeSel').disabled=ruleLocked; $('modeSel').style.opacity=ruleLocked?'.6':'';
+  calc();
+}
+// check current A→B bookies against rules; set + lock mode accordingly
+// latest pin vig/edge from the most recent parsed alert (null when none)
+// recompute edge from the CURRENT Odds A field vs pin's fair prob; update status + PIN_EDGE
+function recomputeEdge(){
+  const row=$('oPinRow'), tag=$('oPinTag');
+  if(PIN_FAIR==null || PIN_VIG==null){ PIN_EDGE=null; if(row)row.style.display='none'; return; }
+  const oA=parseFloat($('oddsA').value);
+  if(!(oA>0)){ PIN_EDGE=null; if(row)row.style.display='none'; return; }
+  const iLegA=1/(oA+1);              // your HK odds implied prob
+  PIN_EDGE = PIN_FAIR - iLegA;       // edge on Leg A
+  // show vig + edge in the results block under Locked profit
+  if(row&&tag){
+    row.style.display='flex';
+    tag.innerHTML='<span style="color:var(--dim)">vig '+(PIN_VIG*100).toFixed(2)+'%</span> &nbsp; <b style="font-size:17px;color:'+(PIN_EDGE>=0?'var(--green)':'var(--red)')+'">edge '+(PIN_EDGE>=0?'+':'')+(PIN_EDGE*100).toFixed(2)+'%</b>';
+  }
+}
+// map pin vig+edge to a profit mode per the edge table
+function modeFromEdge(vig,edge){
+  if(edge<=0) return 'bal';   // no positive edge → always balanced
+  // first band (top to bottom) where vig is within limit and edge falls in the range
+  for(const b of EDGE_RULES){
+    if(vig>b.vigMax) continue;                    // vig too high for this band → skip
+    if(edge>b.eMin && (b.eMax==null || edge<=b.eMax)) return b.mode;
+  }
+  return 'bal';               // no band matched
+}
+function applyRuleMode(){
+  // pin edge data present → it overrides the bookie-pair rule entirely
+  if(PIN_VIG!=null && PIN_EDGE!=null){
+    ruleLocked=true;
+    setMode(modeFromEdge(PIN_VIG,PIN_EDGE));
+    return;
+  }
+  const a=$('bkA')?$('bkA').value:'', b=$('bkB')?$('bkB').value:'';
+  const r=RULES.find(r=>r.a===a&&r.b===b);
+  ruleLocked = !!r;
+  setMode(r?r.mode:'bal');
+}
+function setDir(d,userClick){
+  DIR=d;
+  $('dirA').classList.toggle('active',d==='A');
+  $('dirB').classList.toggle('active',d==='B');
+  // the known side is editable; the computed side is read-only/greyed
+  const known=d==='A'?'stakeA':'stakeB', calc_=d==='A'?'stakeB':'stakeA';
+  $(known).readOnly=false; $(known).style.opacity='1';
+  $(calc_).readOnly=true;  $(calc_).style.opacity='.55';
+  $('lblStakeA').textContent = d==='A'?'Stake A (your target)':'Stake A (computed)';
+  $('lblStakeB').textContent = d==='B'?'Stake B (max, before PT)':'Stake B (computed)';
+  // clear BOTH stake boxes on a manual switch so nothing stale remains
+  $('stakeA').value=''; $('stakeB').value='';
+  if(userClick){
+    $(known).focus();
+    $(known).classList.add('flash-hl');
+    setTimeout(()=>{$(known).classList.remove('flash-hl');},1200);
+  }
+  calc();
+}
+function clearCalc(){
+  ['tgPaste','event','league','selA','oddsA','stakeA','oddsB','selB','stakeB'].forEach(i=>{if($(i))$(i).value='';});
+  $('tgStatus').textContent='';
+  ['oStakeA','oStakeBout','oPlaceA','oPlaceB','oRetA','oRetB','oProfit'].forEach(i=>{if($(i))$(i).textContent='—';});
+  ['oTagA','oTagB','oPtAnote','oPtBnote','oOddsA','oOddsB','oSelA','oSelB'].forEach(i=>{if($(i))$(i).textContent='';});
+  const pn=$('oProfitNote'); if(pn)pn.textContent='';
+  const box=$('outBox'); if(box){box.style.background='';box.style.borderColor='';}
+  PIN_VIG=null; PIN_EDGE=null; PIN_FAIR=null;    // drop pin edge data → revert to bookie rules
+  if($('oPinManA'))$('oPinManA').value=''; if($('oPinManB'))$('oPinManB').value='';
+  const pm=$('oPinManual'); if(pm)pm.style.display='none';
+  const pr=$('oPinRow'); if(pr)pr.style.display='none';
+  applyRuleMode();
+  flash('cleared');
+}
+
+function calc(){
+  const oA=parseFloat($('oddsA').value), oB=parseFloat($('oddsB').value);
+  const blank=()=>{['oStakeA','oPlaceA','oPlaceB','oRetA','oRetB','oProfit'].forEach(i=>$(i).textContent='—');['oOddsA','oOddsB','oSelA','oSelB'].forEach(i=>{if($(i))$(i).textContent='';});const b=$('outBox');if(b){b.style.background='';b.style.borderColor='';}const p=$('oProfitNote');if(p)p.textContent='';const kr=$('oKellyRow');if(kr)kr.style.display='none';const pr=$('oPinRow');if(pr)pr.style.display='none';const pm=$('oPinManual');if(pm)pm.style.display='none';const kd=$('oKellyDup');if(kd)kd.style.display='none';const ka=$('oKellyAgainWrap');if(ka)ka.style.display='none';const ke=$('oKellyEditWrap');if(ke)ke.style.display='none';};
+  if(!(oA>0&&oB>0)){blank();return null;}
+  let sA,sB;
+  // HK odds: profit = odds*stake, total back = (1+odds)*stake.
+  // Commission legs (negative rebate): effective odds = quoted * (1 + rebate). Positive rebate doesn't affect balance.
+  const step=$('round').value;
+  const ptAv=pt($('bkA').value), ptBv=pt($('bkB').value);
+  const rA=reb($('bkA').value), rB=reb($('bkB').value);
+  const eA = rA<0 ? oA*(1+rA) : oA;   // effective odds A
+  const eB = rB<0 ? oB*(1+rB) : oB;   // effective odds B
+  // Balanced arb (equal profit either side): sA*(1+eA) = sB*(1+eB)
+  // Weighted modes (s60/s70/s80/maxA): put share w of the profit on A-win. Input is always Stake B max.
+  let fellBack=false;
+  if(isSplit()){
+    const M=parseFloat($('stakeB').value);
+    if(!(M>0)){blank();return null;}
+    const cap=M*ptBv;                          // real stake B cap (after PT)
+    const w=modeW();
+    // A that puts profit split at w:(1-w) using the full cap on B
+    let sAx=cap*(eB*w+(1-w))/(eA*(1-w)+w);
+    sA=Math.floor( sAx /(+step))*(+step);      // round A DOWN to the step
+    if(MODE==='maxA'){
+      // break-even on B at the rounded A
+      sB=Math.ceil(sA/eB); if(sB>cap)sB=Math.floor(cap);
+    }else{
+      // recompute B from the rounded A so the w-split is preserved (else coarse rounding breaks it)
+      sB=Math.round( sA*(eA - w*(eA-1)) / (1 + w*(eB-1)) );
+      if(sB>cap)sB=Math.floor(cap);
+    }
+    // If the split leaves either side negative (no real edge), fall back to balanced —
+    // it splits the outcome most evenly. Uses the same cap on B.
+    if( (eA*sA - sB) < 0 || (eB*sB - sA) < 0 ){
+      const sBmax=cap;
+      const sAcap=sBmax*(1+eB)/(1+eA);
+      sA=Math.floor(sAcap/(+step))*(+step);
+      sB=Math.round( sA*(1+eA)/(1+eB) );
+      while(sB > sBmax){ sB-=1; }
+      fellBack=true;
+    }
+    $('stakeA').value=sA;
+  }else if(DIR==='B'){
+    // Input M = bookie face amount for B. Real stake in the arb = M * PT.
+    const M=parseFloat($('stakeB').value);
+    if(!(M>0)){blank();return null;}
+    const sBmax=M*ptBv;                       // real stake on B (after PT) used in the arb
+    const sAcap=sBmax*(1+eB)/(1+eA);          // matching A at the cap
+    sA=Math.floor(sAcap/(+step))*(+step);     // round A DOWN to the step
+    sB=Math.round( sA*(1+eA)/(1+eB) );        // rebalance real-stake B from rounded A
+    while(sB > sBmax){ sB-=1; }               // real stake B never exceeds M*PT
+    $('stakeA').value=sA;
+  }else{
+    let sAtyped=parseFloat($('stakeA').value);
+    if(!(sAtyped>0)){blank();return null;}
+    sB=round( sAtyped*(1+eA)/(1+eB), step );
+    sA=Math.round( sB*(1+eB)/(1+eA) );
+    $('stakeB').value=sB;
+  }
+  // returns & profit use EFFECTIVE odds (commission already taken out of winnings)
+  const retA=(1+eA)*sA, retB=(1+eB)*sB;
+  const profA=eA*sA - sB;   // A wins
+  const profB=eB*sB - sA;   // B wins
+  $('oBkA').textContent = $('bkA').value;
+  $('oBkB').textContent = $('bkB').value;
+  $('oStakeA').textContent=sA.toLocaleString();
+  $('oStakeBout').textContent=sB.toLocaleString();
+  if(+step>1){
+    if(DIR==='B'){ $('oTagA').textContent='(rounded to '+step+')'; $('oTagB').textContent='(rebalanced)'; }
+    else { $('oTagB').textContent='(rounded to '+step+')'; $('oTagA').textContent='(rebalanced)'; }
+  }else{ $('oTagA').textContent=''; $('oTagB').textContent=''; }
+  // append effective-odds note where commission lowered the odds
+  if(rA<0) $('oTagA').textContent += ' eff '+eA.toFixed(3);
+  if(rB<0) $('oTagB').textContent += ' eff '+eB.toFixed(3);
+  $('oRetA').textContent=Math.round(retA).toLocaleString();
+  $('oRetB').textContent=Math.round(retB).toLocaleString();
+  const pa=profA.toFixed(0), pb=profB.toFixed(0);
+  $('oProfit').innerHTML=`<span class="${profA>=0?'pos':'neg'}">${pa}</span> / <span class="${profB>=0?'pos':'neg'}">${pb}</span>`;
+  const gap=Math.abs(profA-profB), worst=Math.min(profA,profB);
+  let pn=$('oProfitNote');
+  if(!pn){pn=document.createElement('div');pn.id='oProfitNote';pn.className='note';pn.style.marginTop='4px';$('oProfit').parentElement.parentElement.appendChild(pn);}
+  const box=$('outBox');
+  if(worst<0){
+    // a losing side — flag hard in red
+    box.style.background='rgba(248,81,73,.12)';
+    box.style.borderColor='var(--red)';
+    pn.innerHTML='<span style="color:var(--red);font-weight:700;font-size:13px">不行 — one side loses ('+(profA<0?'A':'B')+' wins → '+worst.toFixed(0)+'). Adjust odds/stake or use finer rounding.</span>';
+  }else{
+    box.style.background='';
+    box.style.borderColor='';
+    if(fellBack){
+      pn.innerHTML='<span style="color:var(--amber)">split mode had a losing side — reverted to <b>balanced</b> ('+profA.toFixed(0)+' / '+profB.toFixed(0)+').</span>';
+    }else if(isSplit()){
+      const tot=profA+profB;
+      const sharA=tot>0?Math.round(profA/tot*100):0;
+      pn.innerHTML='<span style="color:var(--dim)">split <b style="font-size:16px;color:#d29922">'+sharA+'%</b> A / <b style="font-size:16px;color:#d29922">'+(100-sharA)+'%</b> B — A win '+profA.toFixed(0)+', B win '+profB.toFixed(0)+'.</span>';
+    }else if(gap>Math.max(2,Math.abs(profA)*0.15)){
+      pn.innerHTML='<span style="color:var(--amber)">↔ sides differ by '+gap.toFixed(0)+' due to rounding — finer rounding evens it out.</span>';
+    }else{pn.textContent='';}
+  }
+
+  const placeA=round(sA/ptAv,1), placeB=round(sB/ptBv,1);
+  $('oPlaceA').textContent=placeA.toLocaleString();
+  $('oPlaceB').textContent=placeB.toLocaleString();
+  $('oOddsA').textContent='@'+oA;
+  $('oOddsB').textContent='@'+oB;
+  $('oSelA').textContent=$('selA').value||'';
+  $('oSelB').textContent=$('selB').value||'';
+  $('oPlBkA').textContent=$('bkA').value;
+  $('oPlBkB').textContent=$('bkB').value;
+  $('oPtAnote').textContent=ptAv<1?`(PT ${(ptAv*100).toFixed(0)}%)`:'';
+  $('oPtBnote').textContent=ptBv<1?`(PT ${(ptBv*100).toFixed(0)}%)`:'';
+
+  // Kelly extra unhedged stake on Leg A (only when we have pin vig data)
+  let kx=extraStake(oA);
+  const kr=$('oKellyRow'), pm=$('oPinManual');
+  const havePin = (PIN_VIG!=null && PIN_FAIR!=null);
+  // placed-history duplicate check (event+day+market type), unless overridden
+  prunePlaced();
+  const dup = (kx>0 && !BET_AGAIN) ? placedMatch(CUR_EV, CUR_DAY, CUR_MKT) : null;
+  if(kr && pm){
+    if(havePin && kx>0){
+      // show the extra bet, hide manual inputs
+      kr.style.display=''; pm.style.display='none';
+      $('oKellyBk').textContent=$('bkA').value;
+      $('oKellySel').textContent=$('selA').value||'';
+      $('oKellyOdds').textContent='@'+oA;
+      $('oKellyEv').textContent=$('event').value||'';
+      const half = PIN_VIG>EXTRA_VIG_MAX;
+      const pe = PIN_FAIR - 1/(oA+1);
+      const edgeUsed = Math.min(Math.max(pe - 0.005, 0), 0.05);
+      $('oKellyNote').textContent='('+(half?(STAKING.kelly*EXTRA_HIVIG_FACTOR):STAKING.kelly)+'× Kelly'+(half?' — half, vig '+(PIN_VIG*100).toFixed(1)+'% > '+(EXTRA_VIG_MAX*100)+'%':'')+' · edge '+(edgeUsed*100).toFixed(2)+'% (pin '+(pe*100).toFixed(2)+'%, floor '+((STAKING.floor!=null?STAKING.floor:0.01)*100).toFixed(2)+'% − 0.5% haircut, cap 5%) · bet cap '+(STAKING.cap*100).toFixed(1)+'%)';
+      if(dup){
+        // already placed on this event+day+market → hide the extra + total, show only the warning + override
+        const newSugg = kx;                                  // freshly-computed suggestion (before we zero it)
+        const alreadyAmt = (dup.amt!=null) ? Number(dup.amt) : null;
+        kx=0;
+        $('oKelly').textContent='0';
+        $('oKellyHead').style.display='none';
+        $('oKellyEv').style.display='none';
+        $('oKellyNote').style.display='none';
+        $('oKellyTotRow').style.display='none';
+        const prevAmt  = (alreadyAmt!=null) ? alreadyAmt.toLocaleString() : '—';
+        const prevSel  = (dup.sel!==''&&dup.sel!=null) ? dup.sel : '—';
+        const prevOdds = (dup.odds!=null) ? ('@'+dup.odds) : '—';
+        // new suggestion + difference vs what's already placed (stake difference, not odds-weighted)
+        let diffLine='';
+        if(alreadyAmt!=null){
+          const diff = newSugg - alreadyAmt;
+          const diffStr = (diff>0?'+':'') + diff.toLocaleString();
+          const diffBg = diff>0 ? 'rgba(46,160,67,.18)' : (diff<0 ? 'rgba(248,81,73,.18)' : 'rgba(128,128,128,.15)');
+          const diffColor = diff>0 ? '#2ea043' : (diff<0 ? '#f85149' : 'var(--dim)');
+          const diffChip = '<b style="color:'+diffColor+';font-size:16px;background:'+diffBg+';padding:1px 8px;border-radius:5px">'+diffStr+'</b>';
+          const advice = diff<0 ? '<div style="margin-top:6px;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#fff;background:#c1352d;padding:6px 10px;border-radius:6px">⛔ NOT SUGGESTED TO OVERRIDE — ALREADY PLACED MORE THAN THE NEW TARGET</div>' : '';
+          diffLine = '<br><span style="color:var(--ink)">new suggested: <b style="color:#2ea043">'+newSugg.toLocaleString()+'</b> · already placed: <b>'+prevAmt+'</b> · diff: '+diffChip+'</span>'+advice;
+        }else{
+          diffLine = '<br><span style="color:var(--ink)">new suggested: <b style="color:#2ea043">'+newSugg.toLocaleString()+'</b></span>';
+        }
+        $('oKellyDup').style.display='';
+        $('oKellyDup').innerHTML='⚠ already has bet on this game today ('+(dup.mkt==='ou'?'total':'handicap')+'): <b>'+prevAmt+'</b> · <b>'+prevSel+'</b> · <b>'+prevOdds+'</b> — tick below to bet again.'+diffLine;
+        $('oKellyAgainWrap').style.display='flex';
+        // dup warning state (not yet overridden) → no edit box
+        $('oKellyEditWrap').style.display='none';
+      }else{
+        $('oKellyHead').style.display='flex';
+        $('oKellyEv').style.display='';
+        $('oKellyNote').style.display='';
+        $('oKellyTotRow').style.display='flex';
+        $('oKelly').textContent=kx.toLocaleString();
+        $('oKellyDup').style.display='none';
+        const overriding = !!(placedMatch(CUR_EV,CUR_DAY,CUR_MKT)&&BET_AGAIN);
+        $('oKellyAgainWrap').style.display = overriding ? 'flex' : 'none';
+        // editable log-amount box: only while override is active
+        if(overriding){
+          $('oKellyEditWrap').style.display='flex';
+          $('oKellySugg').textContent=kx.toLocaleString();
+          // pre-fill with computed suggestion unless the user has already typed something
+          if(EXTRA_EDIT==null) $('oKellyEdit').value=kx;
+        }else{
+          $('oKellyEditWrap').style.display='none';
+        }
+      }
+      // combined total to place on Leg A's bookie = arb place amount + extra.
+      // when overriding with a typed log amount, reflect that amount in the total instead of the computed kx.
+      const effExtra = (BET_AGAIN && EXTRA_EDIT!=null && EXTRA_EDIT>0) ? EXTRA_EDIT : kx;
+      const tot=placeA+effExtra;
+      $('oKellyTot').textContent=tot.toLocaleString();
+      $('oKellyTotLbl').textContent='TOTAL on '+$('bkA').value+' ('+placeA.toLocaleString()+' arb + '+effExtra.toLocaleString()+' extra)';
+    }else if(!havePin && $('oddsA').value && $('selA').value){
+      // no pin data → hide extra, show the two manual pin-odds boxes.
+      // box A = Leg A's OWN side (that's what setPinFromSides expects as pinSideA); box B = the other side.
+      kr.style.display='none'; pm.style.display='';
+      const selTxt=($('selA').value||'').trim();
+      $('oPinLblA').textContent = selTxt ? ('pin — '+selTxt+' HK') : 'pin — YOUR side (Leg A) HK';
+      $('oPinLblB').textContent = 'pin — other side HK';
+    }else{
+      kr.style.display='none'; pm.style.display='none';
+    }
+  }
+
+  // re-show the pin vig/edge row if we have pin data (calc's blank() may have hidden it earlier)
+  if(PIN_VIG!=null && PIN_FAIR!=null){
+    const pr=$('oPinRow'), tag=$('oPinTag');
+    if(pr&&tag){
+      pr.style.display='flex';
+      const iLegA=1/(oA+1), edge=PIN_FAIR-iLegA;
+      tag.innerHTML='<span style="color:var(--dim)">vig '+(PIN_VIG*100).toFixed(2)+'%</span> &nbsp; <b style="font-size:17px;color:'+(edge>=0?'var(--green)':'var(--red)')+'">edge '+(edge>=0?'+':'')+(edge*100).toFixed(2)+'%</b>';
+    }
+  }
+
+  return {sA,sB,retA,retB,profA,profB,placeA,placeB};
+}
+// Kelly extra unhedged stake on a leg given its HK odds (uses STAKING params, live)
+// vig gate for the extra bet: at/below this, full Kelly; above, half Kelly. No pin vig → no bet.
+const EXTRA_VIG_MAX=0.08;      // 8%
+const EXTRA_HIVIG_FACTOR=0.5; // half stake when vig above the threshold
+// user typed the two pin HK odds manually (no pin ref in alert) → drive the full pipeline
+function applyManualPin(){
+  const a=parseFloat($('oPinManA').value);   // Leg A's pin side (主/大)
+  const b=parseFloat($('oPinManB').value);   // the other side (客/小)
+  if(a>0 && b>0){
+    setPinFromSides(a,b);       // sets PIN_VIG, PIN_FAIR
+  }else{
+    PIN_VIG=null; PIN_FAIR=null; PIN_EDGE=null;
+  }
+  recomputeEdge();              // edge from current Odds A + PIN_FAIR
+  applyRuleMode();              // mode from edge (or bookie rule if cleared)
+  calc();                      // refresh stakes + extra bet display
+}
+function extraStake(hkjbHK){
+  const KMULT=STAKING.kelly, BANKROLL=STAKING.bankroll, CAP=STAKING.cap;
+  if(!(hkjbHK>0)) return 0;
+  if(PIN_VIG==null || PIN_FAIR==null) return 0;      // no pin data → no extra bet
+  const pinEdge = PIN_FAIR - 1/(hkjbHK+1);           // THIS bet's pin edge
+  const floor = (STAKING.floor!=null) ? STAKING.floor : 0.01;
+  if(pinEdge < floor) return 0;                      // floor: only bet if raw edge >= floor (below → skip)
+  const kmult = PIN_VIG<=EXTRA_VIG_MAX ? KMULT : KMULT*EXTRA_HIVIG_FACTOR;  // half above the vig gate
+  // size Kelly on the live pin edge, minus a 0.5% haircut, floored at 0 and capped at 5%:
+  //   edgeUsed = min( max(pinEdge - 0.5%, 0), 5% )   (only reached when pinEdge >= 1%)
+  // strong bets size bigger (live edge), but the 5% cap stops a stale-price reading producing a monster stake.
+  const HAIRCUT=0.005, EDGE_CAP=0.05;
+  const edgeUsed = Math.min(Math.max(pinEdge - HAIRCUT, 0), EDGE_CAP);
+  const d=hkjbHK+1, b=d-1, p=1/d+edgeUsed, q=1-p;
+  const kelly=(b*p-q)/b;
+  if(kelly<=0) return 0;
+  const raw=Math.min(kmult*kelly, CAP)*BANKROLL;
+  // round to nearest 100 normally; but if the raw suggestion is under 100, round to nearest 10 instead
+  return raw<100 ? Math.round(raw/10)*10 : Math.round(raw/100)*100;
+}
+['stakeA','stakeB','oddsB','round','selA','selB'].forEach(id=>$(id).addEventListener('input',calc));
+// editing Odds A recomputes the pin edge live, then re-applies the edge→mode rule
+$('oddsA').addEventListener('input',()=>{ recomputeEdge(); applyRuleMode(); });
+// bookie changes re-check the profit-mode rules (which then calls calc)
+['bkA','bkB'].forEach(id=>$(id).addEventListener('change',applyRuleMode));
+
+// push the two arb hedge legs (returns false if calc invalid)
+function pushArbLegs(){
+  const c=calc(); if(!c){flash('fill odds + the known stake first');return false;}
+  const date=$('logdate').value, lg=$('league').value, ev=$('event').value;
+  const pMin=Math.min(c.profA,c.profB), pMax=Math.max(c.profA,c.profB);
+  // pin vig/edge (if present) go on the Leg A row only
+  const vig = (PIN_VIG!=null) ? (PIN_VIG*100) : null;
+  const edge = (PIN_EDGE!=null) ? (PIN_EDGE*100) : null;
+  const placed = (typeof nowAccurate==='function') ? nowAccurate() : Date.now();
+  const koTs = CUR_KICK || null;
+  log.push({date,placed,ko:koTs,bk:$('bkA').value,lg,ev,sel:$('selA').value||'—',odds:+$('oddsA').value,stake:c.sA,pMin,pMax,vig,edge});
+  log.push({date,placed,ko:koTs,bk:$('bkB').value,lg,ev,sel:$('selB').value||'—',odds:+$('oddsB').value,stake:c.sB,pMin:0,pMax:0,vig:null,edge:null});
+  return true;
+}
+// push the single unhedged Kelly extra bet on Leg A (returns false if none)
+function pushExtraBet(){
+  const oA=parseFloat($('oddsA').value);
+  const kx=extraStake(oA);
+  if(!(kx>0)){flash('no extra bet — Kelly is zero at these odds');return false;}
+  // duplicate guard: already placed an extra on this event+day+market, and not overridden
+  prunePlaced();
+  if(!BET_AGAIN && placedMatch(CUR_EV,CUR_DAY,CUR_MKT)){
+    flash('already placed an extra on this game today — tick "bet again" to override');
+    return false;
+  }
+  const date=$('logdate').value, lg=$('league').value, ev=$('event').value;
+  const vig = (PIN_VIG!=null) ? (PIN_VIG*100) : null;
+  const edge = (PIN_EDGE!=null) ? (PIN_EDGE*100) : null;
+  // when overriding a duplicate, allow a user-typed stake to be logged/recorded instead of the computed one
+  const stakeToLog = (BET_AGAIN && EXTRA_EDIT!=null && EXTRA_EDIT>0) ? EXTRA_EDIT : kx;
+  if(!(stakeToLog>0)){flash('log amount is zero — enter a stake to log');return false;}
+  // an unhedged single: its own profit range is 0 (win) to −stake (lose); we log 0/0 so it doesn't skew the arb est.
+  const oppBk = ($('bkB') && $('bkB').value) ? (' '+$('bkB').value) : '';
+  log.push({date,placed:((typeof nowAccurate==='function')?nowAccurate():Date.now()),ko:(CUR_KICK||null),bk:$('bkA').value,lg,ev,sel:($('selA').value||'—')+' (EXTRA'+oppBk+')',odds:oA,stake:stakeToLog,pMin:0,pMax:0,vig,edge});
+  // record into placed-history so a later re-arb of the same game warns us
+  // fallback market type from selection text if CUR_MKT wasn't set by the parser
+  let mkt = CUR_MKT;
+  if(!mkt){
+    const selTxt=($('selA').value||'').toLowerCase();
+    mkt = /大|小|over|under|o\/u|total|goal/.test(selTxt) ? 'ou'
+        : /[+\-]?\d|主|客|home|away|ah|handicap|hcp/.test(selTxt) ? 'hcp' : 'hcp';
+  }
+  recordPlaced(CUR_EV||ev, CUR_DAY||date, mkt, CUR_LINE, CUR_KICK, stakeToLog, ($('selA').value||''), oA, (lg||($('league')?$('league').value:'')||''));
+  return true;
+}
+// override checkbox: recompute so the extra stake reappears / logs
+function toggleBetAgain(){ BET_AGAIN = !!($('betAgain') && $('betAgain').checked); EXTRA_EDIT=null; calc(); }
+// user typed a custom log amount in the override box; store it (blank → revert to computed)
+function editExtraStake(){ const v=$('oKellyEdit').value; EXTRA_EDIT = (v===''||v==null) ? null : Math.max(0, Math.round(Number(v))); calc(); }
+function clearBetFields(){['selA','oddsA','stakeA','stakeB','oddsB','selB'].forEach(i=>$(i).value='');calc();}
+
+function addArbLegs(){ if(pushArbLegs()){render();flash('2 arb legs added');clearBetFields();} }
+function addExtraBet(){ if(pushExtraBet()){render();flash('extra bet added');clearBetFields();} }
+function addAll(){
+  const ok=pushArbLegs();
+  if(!ok) return;
+  const hadExtra=pushExtraBet();   // may or may not add depending on Kelly
+  render();
+  flash(hadExtra?'2 legs + extra added':'2 arb legs added');
+  clearBetFields();
+}
+
+function delRow(i){log.splice(i,1);render();}
+function clearLog(){if(log.length&&!confirm('Clear all '+log.length+' legs?'))return;log=[];render();}
+
+function render(){
+  const tb=$('logBody');
+  if(!log.length){tb.innerHTML='<tr><td colspan="5" class="empty">no legs yet — add from calculator</td></tr>';}
+  else{
+    tb.innerHTML=log.map((r,i)=>`<tr>
+      <td>${r.bk}</td><td>${r.sel}</td>
+      <td class="num">${r.odds}</td><td class="num">${r.stake.toLocaleString()}</td>
+      <td class="del" onclick="delRow(${i})">✕</td></tr>`).join('');
+  }
+  const turn=log.reduce((s,r)=>s+r.stake,0);
+  // est profit range = sum of each pair's min/max profit + POSITIVE rebates.
+  // Negative rebate (commission) already inside the profit via effective odds — not added.
+  const posReb=log.reduce((s,r)=>{const rt=reb(r.bk); return s+(rt>0?r.stake*rt:0);},0);
+  const minTot=log.reduce((s,r)=>s+(r.pMin||r.prof||0),0)+posReb;   // r.prof for legacy rows
+  const maxTot=log.reduce((s,r)=>s+(r.pMax||r.prof||0),0)+posReb;
+  $('sLegs').textContent=log.length;
+  $('sTurn').textContent=Math.round(turn).toLocaleString();
+  const same=Math.abs(minTot-maxTot)<0.5;
+  $('sReb').textContent=same?minTot.toFixed(1):(minTot.toFixed(1)+' ~ '+maxTot.toFixed(1));
+  $('sReb').className='v '+(minTot>=0?'pos':'neg');
+}
+
+// time from placement to kickoff in decimal hours, rounded to 2dp (e.g. 10:30 -> 10.5, 12:10 -> 12.17).
+// negative if placed after KO; blank if either time is unknown.
+function fmtToKO(placedMs, koMs){
+  if(placedMs==null || koMs==null) return '';
+  const hours = (koMs - placedMs) / 3600000;
+  return (Math.round(hours*100)/100).toString();
+}
+function tsv(){
+  // columns: date, time to KO, bookie, league, event, selection, odds, stake, [P/L], [rebate], [bet], [blank], pin vig, edge
+  return log.map(r=>{
+    const vig = r.vig!=null ? r.vig.toFixed(2)+'%' : '';
+    const edge = r.edge!=null ? (r.edge>=0?'+':'')+r.edge.toFixed(2)+'%' : '';
+    return [r.date, fmtToKO(r.placed, r.ko), r.bk,r.lg,r.ev,r.sel,r.odds,r.stake, '', '', '', '', vig, edge].join('\t');
+  }).join('\n');
+}
+function copyTSV(){
+  if(!log.length){flash('nothing to copy');return;}
+  navigator.clipboard.writeText(tsv()).then(()=>flash('✓ '+log.length+' rows copied — paste into bet record'));
+}
+function dlCSV(){
+  if(!log.length){flash('nothing to export');return;}
+  const head='date,time to KO,bookies,league,event,selection,odds,stake,P/L,rebate,bet,,pin vig,edge\n';
+  const body=log.map(r=>{
+    const vig = r.vig!=null ? r.vig.toFixed(2)+'%' : '';
+    const edge = r.edge!=null ? (r.edge>=0?'+':'')+r.edge.toFixed(2)+'%' : '';
+    return [r.date,`"${fmtToKO(r.placed, r.ko)}"`,r.bk,`"${r.lg}"`,`"${r.ev}"`,`"${r.sel}"`,r.odds,r.stake,'','','','',vig,edge].join(',');
+  }).join('\n');
+  const blob=new Blob([head+body],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='bets_'+$('logdate').value+'.csv';a.click();
+  flash('CSV downloaded');
+}
+function flash(m){const t=$('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900);}
+renderCfg();
+renderRules();
+renderEdge();
+renderStaking();
+renderPlaced();
+// sync theme dropdown to the active theme (startup applyTheme ran before the DOM existed)
+{const s=$('themeSel'); if(s){let t='warmlight';try{t=localStorage.getItem('arbTheme')||'warmlight';}catch(e){} s.value=t;}}
+syncDropdowns();
+if(CFG['HKJB'])$('bkA').value='HKJB';
+if(CFG['198 fix'])$('bkB').value='198 fix';
+setDir('B');
+applyRuleMode();
+render();
+// verify network time on load; until it confirms, prunePlaced() is a no-op (nothing auto-removed).
+// (the lock screen may have already started this — startClockSyncOnce guards against double-run.)
+startClockSyncOnce();
+</script>
+</body>
+</html>
